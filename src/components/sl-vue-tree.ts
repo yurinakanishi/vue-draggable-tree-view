@@ -1,17 +1,15 @@
+import type { CursorPosition, InsertMode, NodeModelType, NodeType, TraverseCallback, TraverseNodeModelCallback } from '../type/index'
+
 export default {
   name: "sl-vue-tree",
   props: {
     value: {
-      type: Array,
-      default: () => [],
+      type: Object as () => NodeType | null, 
+      default: () => null,
     },
     edgeSize: {
       type: Number,
       default: 3,
-    },
-    showBranches: {
-      type: Boolean,
-      default: false,
     },
     level: {
       type: Number,
@@ -19,28 +17,6 @@ export default {
     },
     parentInd: {
       type: Number,
-    },
-    allowMultiselect: {
-      type: Boolean,
-      default: true,
-    },
-    allowToggleBranch: {
-      type: Boolean,
-      default: true,
-    },
-    multiselectKey: {
-      type: [String, Array],
-      default: function () {
-        return ["ctrlKey", "metaKey"];
-      },
-      validator: function (value) {
-        let allowedKeys = ["ctrlKey", "metaKey", "altKey"];
-        let multiselectKeys = Array.isArray(value) ? value : [value];
-        multiselectKeys = multiselectKeys.filter(
-          (keyName) => allowedKeys.indexOf(keyName) !== -1
-        );
-        return !!multiselectKeys.length;
-      },
     },
     scrollAreaHeight: {
       type: Number,
@@ -51,18 +27,17 @@ export default {
       default: 20,
     },
   },
-
   data() {
     return {
-      rootCursorPosition: null,
-      scrollIntervalId: 0,
-      scrollSpeed: 0,
-      lastSelectedNode: null,
-      mouseIsDown: false,
-      isDragging: false,
-      lastMousePos: { x: 0, y: 0 },
-      preventDrag: false,
-      currentValue: this.value,
+      rootCursorPosition: null as null | CursorPosition,
+      scrollIntervalId: 0 as number,
+      scrollSpeed: 0 as number,
+      lastSelectedNode: null as null | NodeType, 
+      mouseIsDown: false as boolean,
+      isDragging: false as boolean,
+      lastMousePos: { x: 0, y: 0 } as { x: number; y: number },
+      preventDrag: false as boolean,
+      currentValue: this.value as NodeType[]
     };
   },
 
@@ -77,13 +52,13 @@ export default {
   },
 
   watch: {
-    value: function (newValue) {
+    value: function (newValue:NodeType) {
       this.currentValue = newValue;
     },
   },
 
   computed: {
-    cursorPosition() {
+    cursorPosition(): CursorPosition | null {
       if (this.isRoot) return this.rootCursorPosition;
       return this.getParent().cursorPosition;
     },
@@ -106,22 +81,14 @@ export default {
      */
     gaps() {
       const gaps = [];
-      let i = this.level;
-      if (!this.showBranches) i++;
+      let i: number = this.level;
+      i++;
       while (i-- > 0) gaps.push(i);
       return gaps;
     },
 
     isRoot() {
       return !this.level;
-    },
-
-    selectionSize() {
-      return this.getSelected().length;
-    },
-
-    dragSize() {
-      return this.getDraggable().length;
     },
   },
   methods: {
@@ -133,14 +100,14 @@ export default {
       this.getParent().setCursorPosition(pos);
     },
 
-    getNodes(nodeModels, parentPath = [], isVisible = true) {
+    getNodes(nodeModels: NodeType[], parentPath:any[] = [], isVisible:boolean = true): NodeType[] {
       return nodeModels.map((nodeModel, ind) => {
         const nodePath = parentPath.concat(ind);
         return this.getNode(nodePath, nodeModel, nodeModels, isVisible);
       });
     },
 
-    getNode(path, nodeModel = null, siblings = null, isVisible = null) {
+    getNode(path: any[], nodeModel: NodeType = null, siblings: NodeType[] = null, isVisible: boolean = null): NodeType {
       const ind = path.slice(-1)[0];
 
       // calculate nodeModel, siblings, isVisible fields if it is not passed as arguments
@@ -160,7 +127,7 @@ export default {
       const isSelectable =
         nodeModel.isSelectable == void 0 ? true : !!nodeModel.isSelectable;
 
-      const node = {
+      const node:NodeType = {
         // define the all ISlTreeNodeModel props
         name: nodeModel.name,
         isLeaf: !!nodeModel.isLeaf,
@@ -170,10 +137,8 @@ export default {
           : [],
         isSelected: !!nodeModel.isSelected,
         isExpanded,
-        isVisible,
         isDraggable,
         isSelectable,
-        data: nodeModel.data !== void 0 ? nodeModel.data : {},
 
         // define the all ISlTreeNode computed props
         path: path,
@@ -186,14 +151,14 @@ export default {
       return node;
     },
 
-    isVisible(path) {
+    isVisible(path:number[]): boolean {
       if (path.length < 2) return true;
-      let nodeModels = this.currentValue;
+      let nodeModels: NodeModelType[] = this.currentValue;
 
       for (let i = 0; i < path.length - 1; i++) {
-        let ind = path[i];
-        let nodeModel = nodeModels[ind];
-        let isExpanded =
+        let ind: number = path[i];
+        let nodeModel: NodeModelType  = nodeModels[ind];
+        let isExpanded: boolean =
           nodeModel.isExpanded == void 0 ? true : !!nodeModel.isExpanded;
         if (!isExpanded) return false;
         nodeModels = nodeModel.children;
@@ -202,40 +167,40 @@ export default {
       return true;
     },
 
-    emitInput(newValue) {
+    emitInput(newValue: NodeType): void {
       this.currentValue = newValue;
       this.getRoot().$emit("input", newValue);
     },
 
-    emitSelect(selectedNodes, event) {
-      this.getRoot().$emit("select", selectedNodes, event);
+    emitSelect(selectedNode: NodeType, event: MouseEvent): void {
+      this.getRoot().$emit("select", selectedNode, event);
     },
 
-    emitBeforeDrop(draggingNodes, position, cancel) {
+    emitBeforeDrop(draggingNodes: NodeType, position: any, cancel: () => void): void {
       this.getRoot().$emit("beforedrop", draggingNodes, position, cancel);
     },
 
-    emitDrop(draggingNodes, position, event) {
-      this.getRoot().$emit("drop", draggingNodes, position, event);
+    emitDrop(draggingNode: NodeType, position: any, event: MouseEvent): void {
+      this.getRoot().$emit("drop", draggingNode, position, event);
     },
 
-    emitToggle(toggledNode, event) {
+    emitToggle(toggledNode: NodeType, event: MouseEvent): void {
       this.getRoot().$emit("toggle", toggledNode, event);
     },
 
-    emitNodeClick(node, event) {
+    emitNodeClick(node: NodeModelType, event: MouseEvent): void {
       this.getRoot().$emit("nodeclick", node, event);
     },
 
-    emitNodeDblclick(node, event) {
+    emitNodeDblclick(node: NodeModelType, event: MouseEvent): void {
       this.getRoot().$emit("nodedblclick", node, event);
     },
 
-    emitNodeContextmenu(node, event) {
+    emitNodeContextmenu(node: NodeModelType, event: MouseEvent): void {
       this.getRoot().$emit("nodecontextmenu", node, event);
     },
 
-    onExternalDragoverHandler(node, event) {
+    onExternalDragoverHandler(node: NodeModelType, event: MouseEvent): void {
       event.preventDefault();
       const root = this.getRoot();
       const cursorPosition = root.getCursorPositionFromCoords(
@@ -246,7 +211,7 @@ export default {
       root.$emit("externaldragover", cursorPosition, event);
     },
 
-    onExternalDropHandler(node, event) {
+    onExternalDropHandler(node: NodeModelType, event: MouseEvent): void {
       const root = this.getRoot();
       const cursorPosition = root.getCursorPositionFromCoords(
         event.clientX,
@@ -256,60 +221,43 @@ export default {
       this.setCursorPosition(null);
     },
 
-    select(path, addToSelection = false, event = null) {
-      const multiselectKeys = Array.isArray(this.multiselectKey)
-        ? this.multiselectKey
-        : [this.multiselectKey];
-      const multiselectKeyIsPressed =
-        event && !!multiselectKeys.find((key) => event[key]);
-      addToSelection =
-        (multiselectKeyIsPressed || addToSelection) && this.allowMultiselect;
-
-      const selectedNode = this.getNode(path);
+    select(path: any[], event: MouseEvent = null): NodeType {
+      const selectedNode: NodeType = this.getNode(path);
       if (!selectedNode) return null;
+    
       const newNodes = this.copy(this.currentValue);
-      const shiftSelectionMode =
-        this.allowMultiselect &&
-        event &&
-        event.shiftKey &&
-        this.lastSelectedNode;
-      const selectedNodes = [];
-      let shiftSelectionStarted = false;
-
+    
       this.traverse((node, nodeModel) => {
-        if (shiftSelectionMode) {
-          if (
-            node.pathStr === selectedNode.pathStr ||
-            node.pathStr === this.lastSelectedNode.pathStr
-          ) {
-            nodeModel.isSelected = node.isSelectable;
-            shiftSelectionStarted = !shiftSelectionStarted;
-          }
-          if (shiftSelectionStarted) nodeModel.isSelected = node.isSelectable;
-        } else if (node.pathStr === selectedNode.pathStr) {
+        if (node.pathStr === selectedNode.pathStr) {
           nodeModel.isSelected = node.isSelectable;
-        } else if (!addToSelection) {
+        } else {
           if (nodeModel.isSelected) nodeModel.isSelected = false;
         }
-
-        if (nodeModel.isSelected) selectedNodes.push(node);
       }, newNodes);
-
       this.lastSelectedNode = selectedNode;
       this.emitInput(newNodes);
-      this.emitSelect(selectedNodes, event);
+      this.emitSelect(selectedNode, event);
+      // console.log("selectedNode", selectedNode);
       return selectedNode;
     },
 
-    onMousemoveHandler(event) {
+    onMousemoveHandler(event: MouseEvent): void {
+      // console.log({
+      //   mouseIsDown: this.mouseIsDown,
+      //   lastMousePos: this.lastMousePos,
+      //   isDragging: this.isDragging,
+      //   $dragInfo: this.$refs.dragInfo
+      // });
+      try {
       if (!this.isRoot) {
         this.getRoot().onMousemoveHandler(event);
         return;
       }
-
+      // console.log('this.preventDrag', this.preventDrag)
       if (this.preventDrag) return;
 
       const initialDraggingState = this.isDragging;
+      
       const isDragging =
         this.isDragging ||
         (this.mouseIsDown &&
@@ -335,11 +283,18 @@ export default {
         $root.scrollTop -
         ($dragInfo.style.marginBottom | 0);
       const dragInfoLeft = event.clientX - rootRect.left;
+      
+      // console.log('this.getRoot()', this.getRoot())
+      // console.log('$root', $root)
+      // console.log('rootRect', rootRect)
+      // console.log('$dragInfo', $dragInfo)
+      // console.log('dragInfoTop', dragInfoTop)
+      // console.log('dragInfoLeft', dragInfoLeft)
 
       $dragInfo.style.top = dragInfoTop + "px";
       $dragInfo.style.left = dragInfoLeft + "px";
 
-      const cursorPosition = this.getCursorPositionFromCoords(
+      const cursorPosition:CursorPosition = this.getCursorPositionFromCoords(
         event.clientX,
         event.clientY
       );
@@ -347,11 +302,11 @@ export default {
       const placement = cursorPosition.placement;
 
       if (isDragStarted && !destNode.isSelected) {
-        this.select(destNode.path, false, event);
+        this.select(destNode.path,  event);
       }
 
-      const draggableNodes = this.getDraggable();
-      if (!draggableNodes.length) {
+      const draggableNode = this.getDraggable();
+      if (!draggableNode) {
         this.preventDrag = true;
         return;
       }
@@ -375,15 +330,18 @@ export default {
       } else {
         this.stopScroll();
       }
+    } catch (error) {
+      console.error("Error handling mousemove event:", error);
+    }
     },
 
-    getCursorPositionFromCoords(x, y) {
+    getCursorPositionFromCoords(x:number, y:number): any {
       const $target = document.elementFromPoint(x, y);
       const $nodeItem = $target.getAttribute("path")
         ? $target
         : this.getClosetElementWithPath($target);
-      let destNode;
-      let placement;
+      let destNode: NodeType;
+      let placement: "before" | "inside" | "after";
 
       if ($nodeItem) {
         if (!$nodeItem) return;
@@ -405,32 +363,32 @@ export default {
             placement = "inside";
           }
         }
-        console.log("nodeHeight", nodeHeight);
-        console.log("edgeSize", edgeSize);
+        // console.log("nodeHeight", nodeHeight);
+        // console.log("edgeSize", edgeSize);
       } else {
         const $root = this.getRoot().$el;
         const rootRect = $root.getBoundingClientRect();
-        console.log("rootRect", rootRect);
+        // console.log("rootRect", rootRect);
         if (y > rootRect.top + rootRect.height / 2) {
           placement = "after";
-          destNode = this.getNode(JSON.parse($nodeItem.getAttribute("path")));
+          destNode = this.getLastNode();
         } else {
           placement = "before";
-          destNode = this.getNode(JSON.parse($nodeItem.getAttribute("path")));
+          destNode = this.getFirstNode();
         }
       }
 
-      console.log("placement", placement);
+      // console.log("placement", placement);
       return { node: destNode, placement };
     },
 
-    getClosetElementWithPath($el) {
+    getClosetElementWithPath($el: HTMLElement): HTMLElement {
       if (!$el) return null;
       if ($el.getAttribute("path")) return $el;
       return this.getClosetElementWithPath($el.parentElement);
     },
 
-    onMouseleaveHandler(event) {
+    onMouseleaveHandler(event: MouseEvent): void {
       if (!this.isRoot || !this.isDragging) return;
       const $root = this.getRoot().$el;
       const rootRect = $root.getBoundingClientRect();
@@ -447,24 +405,24 @@ export default {
       }
     },
 
-    getNodeEl(path) {
+    getNodeEl(path: any[]): void {
       this.getRoot().$el.querySelector(`[path="${JSON.stringify(path)}"]`);
     },
 
-    getLastNode() {
-      let lastNode = null;
+    getLastNode() : NodeType {
+      let lastNode: NodeType | null = null;
       this.traverse((node) => {
         lastNode = node;
       });
       return lastNode;
     },
 
-    getFirstNode() {
+    getFirstNode() : NodeType {
       return this.getNode([0]);
     },
 
-    getNextNode(path, filter = null) {
-      let resultNode = null;
+    getNextNode(path: any[], filter: (node: NodeModelType) => boolean | null = null): NodeType {
+      let resultNode: NodeType | null = null;
 
       this.traverse((node) => {
         if (this.comparePaths(node.path, path) < 1) return;
@@ -478,17 +436,17 @@ export default {
       return resultNode;
     },
 
-    getPrevNode(path, filter) {
-      let prevNodes = [];
+    getPrevNode(path: any[], filter: (node: NodeModelType) => boolean | null = null): any {
+      let prevNodes: NodeType[] | null = [];
 
-      this.traverse((node) => {
+      this.traverse((node:NodeType) => {
         if (this.comparePaths(node.path, path) >= 0) {
           return false;
         }
         prevNodes.push(node);
       });
 
-      let i = prevNodes.length;
+      let i: number = prevNodes.length;
       while (i--) {
         const node = prevNodes[i];
         if (!filter || filter(node)) return node;
@@ -511,7 +469,7 @@ export default {
      * [1, 2] < [1, 2, 0]
      *
      */
-    comparePaths(path1, path2) {
+    comparePaths(path1: any[], path2: any[]): number {
       for (let i = 0; i < path1.length; i++) {
         if (path2[i] == void 0) return 1;
         if (path1[i] > path2[i]) return 1;
@@ -520,7 +478,7 @@ export default {
       return path2[path1.length] == void 0 ? 0 : -1;
     },
 
-    onNodeMousedownHandler(event, node) {
+    onNodeMousedownHandler(event: MouseEvent, node: NodeModelType): void {
       // handle only left mouse button
       if (event.button !== 0) return;
 
@@ -531,7 +489,7 @@ export default {
       this.mouseIsDown = true;
     },
 
-    startScroll(speed) {
+    startScroll(speed: number) {
       const $root = this.getRoot().$el;
       if (this.scrollSpeed === speed) {
         return;
@@ -551,11 +509,11 @@ export default {
       this.scrollSpeed = 0;
     },
 
-    onDocumentMouseupHandler(event) {
+    onDocumentMouseupHandler(event: MouseEvent): void {
       if (this.isDragging) this.onNodeMouseupHandler(event);
     },
 
-    onNodeMouseupHandler(event, targetNode = null) {
+    onNodeMouseupHandler(event: MouseEvent, targetNode:null | NodeType = null): void {
       // handle only left mouse button
       if (event.button !== 0) return;
 
@@ -567,7 +525,7 @@ export default {
       this.mouseIsDown = false;
 
       if (!this.isDragging && targetNode && !this.preventDrag) {
-        this.select(targetNode.path, false, event);
+        this.select(targetNode.path, event);
       }
 
       this.preventDrag = false;
@@ -577,10 +535,8 @@ export default {
         return;
       }
 
-      const draggingNodes = this.getDraggable();
+      const draggingNode: NodeType= this.getDraggable();
 
-      // check that nodes is possible to insert
-      for (let draggingNode of draggingNodes) {
         if (draggingNode.pathStr == this.cursorPosition.node.pathStr) {
           this.stopDrag();
           return;
@@ -590,25 +546,19 @@ export default {
           this.stopDrag();
           return;
         }
-      }
 
-      const newNodes = this.copy(this.currentValue);
-      const nodeModelsSubjectToInsert = [];
+      const newNodes: NodeType = this.copy(this.currentValue);
+
 
       // find dragging model to delete
-      for (let draggingNode of draggingNodes) {
-        const sourceSiblings = this.getNodeSiblings(
-          newNodes,
-          draggingNode.path
-        );
-        const draggingNodeModel = sourceSiblings[draggingNode.ind];
-        nodeModelsSubjectToInsert.push(draggingNodeModel);
-      }
-
+      const sourceSiblings = this.getNodeSiblings(newNodes, draggingNode.path);
+      const draggingNodeModel = sourceSiblings[draggingNode.ind];
+      draggingNodeModel['_markToDelete'] = true;
+      
       // allow the drop to be cancelled
-      let cancelled = false;
+      let cancelled: boolean = false;
       this.emitBeforeDrop(
-        draggingNodes,
+        draggingNode,
         this.cursorPosition,
         () => (cancelled = true)
       );
@@ -618,16 +568,12 @@ export default {
         return;
       }
 
-      const nodeModelsToInsert = [];
+      const nodeModelToInsert: NodeModelType=draggingNodeModel
+      
 
-      // mark dragging model to delete
-      for (let draggingNodeModel of nodeModelsSubjectToInsert) {
-        nodeModelsToInsert.push(this.copy(draggingNodeModel));
-        draggingNodeModel["_markToDelete"] = true;
-      }
 
       // insert dragging nodes to the new place
-      this.insertModels(this.cursorPosition, nodeModelsToInsert, newNodes);
+      this.insertModel(this.cursorPosition, nodeModelToInsert, newNodes);
 
       // delete dragging node from the old place
       this.traverseModels((nodeModel, siblings, ind) => {
@@ -637,47 +583,65 @@ export default {
 
       this.lastSelectedNode = null;
       this.emitInput(newNodes);
-      this.emitDrop(draggingNodes, this.cursorPosition, event);
+      this.emitDrop(draggingNode, this.cursorPosition, event);
       this.stopDrag();
     },
 
-    onToggleHandler(event, node) {
-      if (!this.allowToggleBranch) return;
-
+    onToggleHandler(event: MouseEvent, node: NodeType): void {
       this.updateNode(node.path, { isExpanded: !node.isExpanded });
       this.emitToggle(node, event);
       event.stopPropagation();
     },
 
-    stopDrag() {
+    stopDrag(): void  {
       this.isDragging = false;
       this.mouseIsDown = false;
       this.setCursorPosition(null);
       this.stopScroll();
     },
 
-    getParent() {
+    getParent(): void  {
       return this.$parent;
     },
 
-    getRoot() {
+    getRoot(): any{
       if (this.isRoot) return this;
       return this.getParent().getRoot();
     },
 
-    getNodeSiblings(nodes, path) {
+    getNodeSiblings(nodes: NodeModelType[], path: number[]) {
       if (path.length === 1) return nodes;
       return this.getNodeSiblings(nodes[path[0]].children, path.slice(1));
     },
+    
+    
+    getNodeParent(nodes: NodeType[], path: number[]): NodeType[] {
+      // If the path length is 1 or less, it means we are at the root or top level,
+      // so there is no parent to return because the top-level nodes do not have a parent within the array.
+      if (path.length <= 1) return null;
+    
+      // Traverse to the parent node of the specified node. We use path.slice(0, -1)
+      // to step just before the last index, which gives us the parent.
+      let parent: NodeType[] = nodes; // Start with the root nodes array
+      for (let i = 0; i < path.length - 1; i++) {
+        parent = parent[path[i]]; // Traverse using the current index
+        if (i < path.length - 2) { // Ensure we do not go to the children of the last node
+          parent = parent.children;
+        }
+      }
+    
+      // parent now should be the direct parent of the node at the given path
+      return parent;
+    },
 
-    updateNode(path, patch) {
+    updateNode(path: number[], patch: Partial<NodeType>): void {
       if (!this.isRoot) {
         this.getParent().updateNode(path, patch);
         return;
       }
 
-      const pathStr = JSON.stringify(path);
-      const newNodes = this.copy(this.currentValue);
+      const pathStr: string = JSON.stringify(path);
+      const newNodes: NodeType[] = this.copy(this.currentValue);
       this.traverse((node, nodeModel) => {
         if (node.pathStr !== pathStr) return;
         Object.assign(nodeModel, patch);
@@ -686,33 +650,39 @@ export default {
       this.emitInput(newNodes);
     },
 
-    getSelected() {
-      const selectedNodes = [];
+    getSelected(): NodeType {
+      let selectedNode: NodeType | null = null;
       this.traverse((node) => {
-        if (node.isSelected) selectedNodes.push(node);
+        if (node.isSelected) {
+          selectedNode = node;
+          return; // Stop the traversal once the first selected node is found
+        }
       });
-      return selectedNodes;
+      return selectedNode;
     },
 
-    getDraggable() {
-      const selectedNodes = [];
+    getDraggable(): NodeType {
+      let draggableNode: NodeType | null = null;
       this.traverse((node) => {
-        if (node.isSelected && node.isDraggable) selectedNodes.push(node);
+        if (node.isSelected && node.isDraggable) {
+          draggableNode = node;
+          return; // Stop the traversal once the first draggable and selected node is found
+        }
       });
-      return selectedNodes;
+      return draggableNode;
     },
 
-    traverse(cb, nodeModels = null, parentPath = []) {
+    traverse(cb: TraverseCallback, nodeModels: NodeModelType[] = null, parentPath: number[] = []): NodeType[] | boolean{
       if (!nodeModels) nodeModels = this.currentValue;
 
-      let shouldStop = false;
+      let shouldStop: boolean = false;
 
-      const nodes = [];
+      const nodes: NodeType[] = [];
 
       for (let nodeInd = 0; nodeInd < nodeModels.length; nodeInd++) {
-        const nodeModel = nodeModels[nodeInd];
-        const itemPath = parentPath.concat(nodeInd);
-        const node = this.getNode(itemPath, nodeModel, nodeModels);
+        const nodeModel: NodeModelType = nodeModels[nodeInd];
+        const itemPath: number[] = parentPath.concat(nodeInd);
+        const node: NodeType = this.getNode(itemPath, nodeModel, nodeModels);
         shouldStop = cb(node, nodeModel, nodeModels) === false;
         nodes.push(node);
 
@@ -728,44 +698,32 @@ export default {
       return !shouldStop ? nodes : false;
     },
 
-    traverseModels(cb, nodeModels) {
-      let i = nodeModels.length;
+    traverseModels(cb: TraverseNodeModelCallback, nodeModels: NodeModelType[]): NodeModelType[] {
+      let i: number = nodeModels.length;
       while (i--) {
-        const nodeModel = nodeModels[i];
+        const nodeModel: NodeModelType = nodeModels[i];
         if (nodeModel.children) this.traverseModels(cb, nodeModel.children);
         cb(nodeModel, nodeModels, i);
       }
       return nodeModels;
     },
 
-    remove(paths) {
-      const pathsStr = paths.map((path) => JSON.stringify(path));
-      const newNodes = this.copy(this.currentValue);
-      this.traverse((node, nodeModel, siblings) => {
-        for (const pathStr of pathsStr) {
-          if (node.pathStr === pathStr) nodeModel._markToDelete = true;
-        }
-      }, newNodes);
+    insertModel(cursorPosition: CursorPosition, nodeModelToInsert: NodeType, newNodes: NodeModelType[]) : void {
+      const insertMode: InsertMode = cursorPosition.placement === "inside" ? "nestInsert" : "cutInInsert";
+      const destNode: NodeType  = cursorPosition.node;
+      const destSiblings: NodeModelType[] = this.getNodeSiblings(newNodes, destNode.path);
+      const destParent: NodeModelType = this.getNodeParent(newNodes, destNode.path);
+      const destNodeModel: NodeModelType  = insertMode === "nestInsert" ? destSiblings[destNode.ind] : undefined
+ 
 
-      this.traverseModels((nodeModel, siblings, ind) => {
-        if (!nodeModel._markToDelete) return;
-        siblings.splice(ind, 1);
-      }, newNodes);
-
-      this.emitInput(newNodes);
-    },
-
-    insertModels(cursorPosition, nodeModels, newNodes) {
-      const destNode = cursorPosition.node;
-      const destSiblings = this.getNodeSiblings(newNodes, destNode.path);
-      const destNodeModel = destSiblings[destNode.ind];
-
-      console.log("destNodeModel", destNodeModel);
-      console.log("destSiblings", destSiblings);
+      // console.log("destNodeModel", destNodeModel);
+      // console.log("destNode", destNode);
+      // console.log("destSiblings", destSiblings);
+      // console.log("destParent", destParent);
 
       // if (
       //   destNodeModel.nodeType === "customer" &&
-      //   nodeModel.nodeType === "location"
+      //   selectedNode.nodeType === "location"
       // ) {
       //   console.error(
       //     "Cannot nest 'location' node type inside 'customer' node type."
@@ -774,29 +732,33 @@ export default {
       // }
 
       if (cursorPosition.placement === "inside") {
+        console.log('destNodeModel.children', destNodeModel.children)
+        console.log('nodeModelsToInsert', [nodeModelToInsert])
         destNodeModel.children = destNodeModel.children || [];
-        destNodeModel.children.unshift(...nodeModels);
+        destNodeModel.children.unshift([nodeModelToInsert]);
+        console.log('shift finished')
+        console.log('destSiblings', destSiblings)
       } else {
-        const insertInd =
+        const insertInd: number =
           cursorPosition.placement === "before"
             ? destNode.ind
             : destNode.ind + 1;
 
-        destSiblings.splice(insertInd, 0, ...nodeModels);
+        destSiblings.splice(insertInd, 0, nodeModelToInsert);
       }
     },
 
-    insert(cursorPosition, nodeModel) {
-      const nodeModels = Array.isArray(nodeModel) ? nodeModel : [nodeModel];
-      const newNodes = this.copy(this.currentValue);
+    insert(cursorPosition: CursorPosition, nodeModel: NodeModelType): void {
+      const nodeModelToInsert: NodeModelType = nodeModel
+      const newNodes: NodeType[] = this.copy(this.currentValue);
 
-      this.insertModels(cursorPosition, nodeModels, newNodes);
+      this.insertModel(cursorPosition, nodeModelToInsert, newNodes);
 
       this.emitInput(newNodes);
     },
 
-    checkNodeIsParent(sourceNode, destNode) {
-      const destPath = destNode.path;
+    checkNodeIsParent(sourceNode: NodeType, destNode: NodeType) {
+      const destPath: number[] = destNode.path;
       return (
         JSON.stringify(destPath.slice(0, sourceNode.path.length)) ==
         sourceNode.pathStr
@@ -808,3 +770,4 @@ export default {
     },
   },
 };
+

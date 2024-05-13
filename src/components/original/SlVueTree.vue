@@ -12,7 +12,7 @@
     >
       <div
         class="sl-vue-tree-node"
-        v-for="(node, nodeInd) in  nodes "
+        v-for="(node, nodeInd) in nodes"
         :class="{ 'sl-vue-tree-selected': node.isSelected }"
       >
         <div
@@ -40,33 +40,42 @@
           @dragover="onExternalDragoverHandler(node, $event)"
           @drop="onExternalDropHandler(node, $event)"
           :path="node.pathStr"
-          :class="[
-      {
-        'sl-vue-tree-cursor-hover':
-          cursorPosition &&
-          cursorPosition.node.pathStr === node.pathStr,
+          :class="{
+      'sl-vue-tree-cursor-hover':
+        cursorPosition &&
+        cursorPosition.node.pathStr === node.pathStr,
 
-        'sl-vue-tree-cursor-inside':
-          cursorPosition &&
-          cursorPosition.placement === 'inside' &&
-          cursorPosition.node.pathStr === node.pathStr,
-
-        'sl-vue-tree-node-is-leaf': node.isLeaf,
-        'sl-vue-tree-node-is-folder': !node.isLeaf
-      },
-      `node node-type-${node.nodeType}`
-    ]"
+      'sl-vue-tree-cursor-inside':
+        cursorPosition &&
+        cursorPosition.placement === 'inside' &&
+        cursorPosition.node.pathStr === node.pathStr,
+      'sl-vue-tree-node-is-leaf': node.isLeaf,
+      'sl-vue-tree-node-is-folder': !node.isLeaf
+    }"
         >
           <div
             class="sl-vue-tree-gap"
             v-for="gapInd in gaps"
           ></div>
 
-          <div class="sl-vue-tree-name">
+          <div
+            class="sl-vue-tree-branch"
+            v-if="level && showBranches"
+          >
             <slot
-              name="name"
+              name="branch"
               :node="node"
-            >{{ node.name }}</slot>
+            >
+              <span v-if="!node.isLastChild">
+                {{ String.fromCharCode(0x251C) }}{{ String.fromCharCode(0x2500) }}&nbsp;
+              </span>
+              <span v-if="node.isLastChild">
+                {{ String.fromCharCode(0x2514) }}{{ String.fromCharCode(0x2500) }}&nbsp;
+              </span>
+            </slot>
+          </div>
+
+          <div class="sl-vue-tree-title">
             <span
               class="sl-vue-tree-toggle"
               v-if="!node.isLeaf"
@@ -76,15 +85,17 @@
                 name="toggle"
                 :node="node"
               >
-                <q-btn
-                  flat
-                  dense
-                  :icon="node.isLeaf ? '' : (node.isExpanded ? 'mdi-chevron-down' : 'mdi-chevron-right')"
-                  :class="{ 'q-ml-sm': true, 'rotated': node.isExpanded }"
-                >
-                </q-btn>
+                <span>
+                  {{ !node.isLeaf ? (node.isExpanded ? '-' : '+') : '' }}
+                </span>
               </slot>
             </span>
+
+            <slot
+              name="title"
+              :node="node"
+            >{{ node.title }}</slot>
+
             <slot
               name="empty-node"
               :node="node"
@@ -103,14 +114,64 @@
 
         </div>
 
-        <SlVueTree
+        <sl-vue-tree
           v-if="node.children && node.children.length && node.isExpanded"
           :value="node.children"
           :level="node.level"
           :parentInd="nodeInd"
+          :allowMultiselect="allowMultiselect"
+          :allowToggleBranch="allowToggleBranch"
           :edgeSize="edgeSize"
+          :showBranches="showBranches"
           @dragover.prevent
-        />
+        >
+          <template
+            slot="title"
+            slot-scope="{ node }"
+          >
+            <slot
+              name="title"
+              :node="node"
+            >{{ node.title }}</slot>
+          </template>
+
+          <template
+            slot="toggle"
+            slot-scope="{ node }"
+          >
+            <slot
+              name="toggle"
+              :node="node"
+            >
+              <span>
+                {{ !node.isLeaf ? (node.isExpanded ? '-' : '+') : '' }}
+              </span>
+            </slot>
+          </template>
+
+          <template
+            slot="sidebar"
+            slot-scope="{ node }"
+          >
+            <slot
+              name="sidebar"
+              :node="node"
+            ></slot>
+          </template>
+
+          <template
+            slot="empty-node"
+            slot-scope="{ node }"
+          >
+            <slot
+              name="empty-node"
+              :node="node"
+              v-if="!node.isLeaf && node.children.length == 0 && node.isExpanded"
+            >
+            </slot>
+          </template>
+
+        </sl-vue-tree>
 
         <div
           class="sl-vue-tree-cursor sl-vue-tree-cursor_after"
@@ -122,11 +183,13 @@
         'visible' :
         'hidden',
       '--depth': depth
-    }
-      "
+    }"
         >
+          <!-- suggested place for node insertion  -->
         </div>
+
       </div>
+
       <div
         v-show="isDragging"
         v-if="isRoot"
@@ -134,7 +197,7 @@
         class="sl-vue-tree-drag-info"
       >
         <slot name="draginfo">
-          Items
+          Itemssssss: {{ selectionSize }}
         </slot>
       </div>
 
@@ -143,10 +206,7 @@
   </div>
 </template>
 
-<script src="./sl-vue-tree.ts">
-
-</script>
-
+<script src="./sl-vue-tree.js"></script>
 <style scoped>
 .sl-vue-tree {
   position: relative;
@@ -162,11 +222,16 @@
   -ms-user-select: none;
   /* Internet Explorer/Edge */
   user-select: none;
+  
   width: 400px;
 }
 
 .sl-vue-tree.sl-vue-tree-root {
-  color: rgb(0, 0, 0);
+  border: 1px solid rgb(9, 22, 29);
+  background-color: rgb(9, 22, 29);
+  color: rgba(255, 255, 255, 0.5);
+  border-radius: 3px;
+  border-color: aqua;
 }
 
 .sl-vue-tree-root>.sl-vue-tree-nodes-list {
@@ -176,28 +241,14 @@
 }
 
 .sl-vue-tree-selected>.sl-vue-tree-node-item {
-  background-color: rgba(255, 230, 0, 0.5);
+  background-color: #13242d;
+  color: white;
 }
 
-.sl-vue-tree-cursor-inside:hover {
-  background-color: rgba(146, 251, 255, 0.5);
+.sl-vue-tree-node-item:hover,
+.sl-vue-tree-node-item.sl-vue-tree-cursor-hover {
+  color: white;
 }
-
-/* .node-type-customer {
-  background-color: #00cc1b;
-}
-
-.node-type-location {
-  background-color: #43ff7b;
-}
-
-.node-type-assetGroup {
-  background-color: #b8ffb1;
-}
-
-.node-type-asset {
-  background-color: #ffffff;
-} */
 
 .sl-vue-tree-node-item {
   position: relative;
@@ -210,6 +261,7 @@
   border: 1px solid transparent;
 }
 
+
 .sl-vue-tree-node-item.sl-vue-tree-cursor-inside {
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
@@ -217,6 +269,7 @@
 .sl-vue-tree-gap {
   width: 25px;
   min-height: 1px;
+
 }
 
 .sl-vue-tree-toggle {
@@ -231,20 +284,16 @@
 
 .sl-vue-tree-cursor {
   position: absolute;
-  background-color: crimson;
-  height: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  height: 1px;
   width: 100%;
-  z-index: 1000;
 }
 
 .sl-vue-tree-drag-info {
   position: absolute;
+  background-color: rgba(0, 0, 0, 0.5);
   opacity: 0.5;
   margin-left: 20px;
   padding: 5px 10px;
-}
-
-.children {
-  margin-left: 20px;
 }
 </style>
