@@ -1,0 +1,32 @@
+{
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit"
+  },
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "prettier.vueIndentScriptAndStyle": true,
+  "html.format.wrapAttributes": "force-expand-multiline",
+  "editor.formatOnPaste": true,
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    }
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[scss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "cSpell.words": [
+    "beforedrop",
+    "draginfo",
+    "externaldragover",
+    "externaldrop",
+    "Konqueror",
+    "nodeclick",
+    "nodecontextmenu",
+    "nodedblclick"
+  ],
+}

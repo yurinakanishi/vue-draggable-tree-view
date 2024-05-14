@@ -1,0 +1,51 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "run",
+      "type": "shell",
+      "command": "yarn",
+      "args": [
+        "dev"
+      ],
+      "isBackground": true,
+      "problemMatcher": [
+        {
+          "base": "$tsc-watch",
+          "pattern": {
+            "regexp": ".*"
+          },
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": ".",
+            "endsPattern": "."
+          }
+        }
+      ],
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated"
+      },
+      "options": {
+        "shell": {
+          "executable": "cmd.exe",
+          "args": ["/d", "/c"]
+        }
+      }
+    },
+    {
+      "label": "stop",
+      "command": "echo ${input:terminate}",
+      "type": "shell"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "terminate",
+      "type": "command",
+      "command": "workbench.action.tasks.terminate",
+      "args": "run"
+    }
+  ]
+}
