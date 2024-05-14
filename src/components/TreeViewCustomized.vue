@@ -1,8 +1,8 @@
 <template>
   <div id="app">
     <div class="flex">
-      <SlVueTree :value="treeData">
-        <!-- <template v-slot:title="{ node }">
+      <SlVueTree v-model="nodes" />
+      <!-- <template v-slot:title="{ node }">
           <span class="item-icon">
             <i class="fa fa-file" v-if="node.isLeaf"></i>
             <i class="fa fa-folder" v-if="!node.isLeaf"></i>
@@ -21,9 +21,8 @@
         <template v-slot:draginfo>
           {{ selectedNodesTitle }}
         </template> -->
-      </SlVueTree>
       <div class="json-preview">
-        <pre>{{ JSON.stringify(treeData, null, 4) }}</pre>
+        <pre>{{ JSON.stringify(nodes, null, 4) }}</pre>
       </div>
     </div>
   </div>
@@ -31,9 +30,14 @@
 
 <script lang="ts" setup>
 import SlVueTree from './SlVueTree.vue'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import type { NodeModelType, NodeType, NodeTypeType } from '../type/index'
-const treeData = ref<NodeModelType[]>([
+
+onMounted(() => {
+  console.log(nodes.value) // Log the actual data
+})
+
+const nodes = ref<NodeModelType[]>([
   {
     id: '1',
     name: 'Customer_Melon0',
@@ -215,7 +219,7 @@ function sortTree(nodes: NodeModelType[]) {
 }
 
 // Initially sort the entire tree
-sortTree(treeData.value)
+sortTree(nodes.value)
 </script>
 <style scoped>
 .json-preview {

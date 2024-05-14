@@ -132,8 +132,8 @@ export default {
   name: 'sl-vue-tree',
   props: {
     value: {
-      type: Object as () => NodeType | null,
-      default: () => null
+      type: Array,
+      default: () => []
     },
     edgeSize: {
       type: Number,
