@@ -1,7 +1,8 @@
 <template>
-  <div id="app">
+  <h2>RevisedSlVueTree</h2>
+  <div>
     <div class="flex">
-      <Child v-for="(node, index) in nodes" :node="node" :key="index" />
+      <Child :value="nodes" />
       <div class="json-preview">
         <pre>{{ nodesJson }}</pre>
       </div>

@@ -1,7 +1,8 @@
 <template>
-  <div id="app">
+  <h2>SlVueTree</h2>
+  <div>
     <div class="flex">
-      <SlVueTree v-model="nodes" :allow-multiselect="true" :show-branches="false" />
+      <SlVueTree :value="nodes" :allow-multiselect="true" :show-branches="false" />
       <div class="json-preview">
         <pre>{{ JSON.stringify(nodes, null, 4) }}</pre>
       </div>
@@ -10,7 +11,7 @@
 </template>
 
 <script lang="ts" setup>
-import SlVueTree from './Child.vue'
+import SlVueTree from './SlVueTree.vue'
 import { ref } from 'vue'
 const nodes = ref([
   { title: 'Item1', isLeaf: true },

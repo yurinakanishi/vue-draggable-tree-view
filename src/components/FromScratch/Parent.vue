@@ -1,4 +1,5 @@
 <template>
+  <h2>FromScratch</h2>
   <div class="flex">
     <div style="margin-right: 300px">
       <Child
