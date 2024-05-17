@@ -10,7 +10,7 @@
 </template>
 
 <script lang="ts" setup>
-import SlVueTree from './SlVueTree.vue'
+import SlVueTree from './Child.vue'
 import { ref } from 'vue'
 const nodes = ref([
   { title: 'Item1', isLeaf: true },

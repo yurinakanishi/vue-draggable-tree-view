@@ -230,7 +230,6 @@ export default {
       event.preventDefault()
       const root = this.getRoot()
       const cursorPosition = root.getCursorPositionFromCoords(event.clientX, event.clientY)
-
       root.setCursorPosition(cursorPosition)
       root.$emit('externaldragover', cursorPosition, event)
     },
@@ -243,8 +242,6 @@ export default {
     },
 
     select(path, addToSelection = false, event = null) {
-      // console.log('path',path)
-      // console.log('path.length',path.length)
       const multiselectKeys = Array.isArray(this.multiselectKey)
         ? this.multiselectKey
         : [this.multiselectKey]
@@ -285,17 +282,11 @@ export default {
     },
 
     onMousemoveHandler(event) {
-      // console.log({
-      //   mouseIsDown: this.mouseIsDown,
-      //   lastMousePos: this.lastMousePos,
-      //   isDragging: this.isDragging,
-      //   $dragInfo: this.$refs.dragInfo
-      // });
       if (!this.isRoot) {
         this.getRoot().onMousemoveHandler(event)
         return
       }
-      // console.log('this.preventDrag', this.preventDrag)
+
       if (this.preventDrag) return
 
       const initialDraggingState = this.isDragging
@@ -303,6 +294,7 @@ export default {
         this.isDragging ||
         (this.mouseIsDown &&
           (this.lastMousePos.x !== event.clientX || this.lastMousePos.y !== event.clientY))
+
       const isDragStarted = initialDraggingState === false && isDragging === true
 
       this.lastMousePos = {
@@ -318,13 +310,6 @@ export default {
       const dragInfoTop =
         event.clientY - rootRect.top + $root.scrollTop - ($dragInfo.style.marginBottom | 0)
       const dragInfoLeft = event.clientX - rootRect.left
-
-      // console.log('this.getRoot()', this.getRoot())
-      // console.log('$root', $root)
-      // console.log('rootRect', rootRect)
-      // console.log('$dragInfo', $dragInfo)
-      // console.log('dragInfoTop', dragInfoTop)
-      // console.log('dragInfoLeft', dragInfoLeft)
 
       $dragInfo.style.top = dragInfoTop + 'px'
       $dragInfo.style.left = dragInfoLeft + 'px'
@@ -708,7 +693,7 @@ export default {
     remove(paths) {
       const pathsStr = paths.map((path) => JSON.stringify(path))
       const newNodes = this.copy(this.currentValue)
-      this.traverse((node, nodeModel) => {
+      this.traverse((node, nodeModel, siblings) => {
         for (const pathStr of pathsStr) {
           if (node.pathStr === pathStr) nodeModel._markToDelete = true
         }
@@ -728,14 +713,8 @@ export default {
       const destNodeModel = destSiblings[destNode.ind]
 
       if (cursorPosition.placement === 'inside') {
-        const newObject = { ...destNodeModel.children }
-        console.log('destNodeModel.children', newObject)
-        console.log('nodeModelsToInsert', nodeModels)
         destNodeModel.children = destNodeModel.children || []
         destNodeModel.children.unshift(...nodeModels)
-        console.log('destNodeModel.children after', destNodeModel.children)
-        console.log('shift finished')
-        console.log('destSiblings', destSiblings)
       } else {
         const insertInd = cursorPosition.placement === 'before' ? destNode.ind : destNode.ind + 1
 
@@ -746,6 +725,7 @@ export default {
     insert(cursorPosition, nodeModel) {
       const nodeModels = Array.isArray(nodeModel) ? nodeModel : [nodeModel]
       const newNodes = this.copy(this.currentValue)
+
       this.insertModels(cursorPosition, nodeModels, newNodes)
 
       this.emitInput(newNodes)

@@ -88,7 +88,7 @@
           </div>
         </div>
 
-        <SlVueTree
+        <Child
           v-if="node.children && node.children.length && node.isExpanded"
           :value="node.children"
           :level="node.level"
@@ -126,7 +126,8 @@ import type {
   NodeType,
   TraverseCallback,
   TraverseNodeModelCallback
-} from '../type/index'
+} from './type'
+import Child from '../tutorial/Child.vue'
 
 export default {
   name: 'sl-vue-tree',

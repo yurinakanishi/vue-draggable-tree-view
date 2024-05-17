@@ -1,37 +1,18 @@
 <template>
   <div id="app">
     <div class="flex">
-      <SlVueTree v-model="nodes" />
-      <!-- <template v-slot:title="{ node }">
-          <span class="item-icon">
-            <i class="fa fa-file" v-if="node.isLeaf"></i>
-            <i class="fa fa-folder" v-if="!node.isLeaf"></i>
-          </span>
-
-          {{ node.title }}
-        </template>
-
-        <template v-slot:toggle="{ node }">
-          <span v-if="!node.isLeaf">
-            <i v-if="node.isExpanded" class="fa fa-chevron-down"></i>
-            <i v-if="!node.isExpanded" class="fa fa-chevron-right"></i>
-          </span>
-        </template>
-
-        <template v-slot:draginfo>
-          {{ selectedNodesTitle }}
-        </template> -->
+      <Child v-for="(node, index) in nodes" :node="node" :key="index" />
       <div class="json-preview">
-        <pre>{{ JSON.stringify(nodes, null, 4) }}</pre>
+        <pre>{{ nodesJson }}</pre>
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import SlVueTree from './SlVueTree.vue'
-import { ref, onMounted } from 'vue'
-import type { NodeModelType, NodeType, NodeTypeType } from '../type/index'
+import Child from './Child.vue'
+import { ref, onMounted, computed } from 'vue'
+import type { NodeModelType } from './type'
 
 onMounted(() => {
   console.log(nodes.value) // Log the actual data
@@ -120,14 +101,6 @@ const nodes = ref<NodeModelType[]>([
         ind: 0,
         children: [
           {
-            id: '8',
-            name: 'Location_Grapes0',
-            nodeType: 'location',
-            isLeaf: false,
-            ind: 1,
-            children: []
-          },
-          {
             id: '9',
             name: 'Location_Grapes0',
             nodeType: 'location',
@@ -159,52 +132,12 @@ const nodes = ref<NodeModelType[]>([
                 children: []
               }
             ]
-          },
-          {
-            id: '93432',
-            name: 'Location_Grapes3',
-            nodeType: 'location',
-            isLeaf: false,
-            ind: 3,
-            children: []
-          },
-          {
-            id: '10890',
-            name: 'Location_Grapes4',
-            nodeType: 'location',
-            isLeaf: false,
-            ind: 4,
-            children: []
-          },
-          {
-            id: '1891',
-            name: 'Location_Grapes5',
-            nodeType: 'location',
-            isLeaf: false,
-            ind: 5,
-            children: []
           }
         ]
       }
     ]
   }
 ])
-
-// const lastEvent = ref('No last event')
-// const selectedNodesTitle = ref('')
-
-// const nodeSelected = (nodes: NodeType[], event: MouseEvent) => {
-//   selectedNodesTitle.value = nodes.map((node) => node.name).join(', ')
-//   lastEvent.value = `Selected nodes: ${selectedNodesTitle.value}`
-// }
-
-// const nodeToggled = (node: NodeType, event: MouseEvent) => {
-//   lastEvent.value = `Node ${node.name} is ${node.isExpanded ? 'expanded' : 'collapsed'}`
-// }
-
-// const nodeDropped = (nodes: NodeType[], position: { placement: string; node: NodeType }) => {
-//   lastEvent.value = `Nodes: ${nodes.map((node) => node.name).join(', ')} are dropped ${position.placement} ${position.node.name}`
-// }
 
 function sortTree(nodes: NodeModelType[]) {
   // Sort the current level of nodes based on the 'ind' property
@@ -220,6 +153,8 @@ function sortTree(nodes: NodeModelType[]) {
 
 // Initially sort the entire tree
 sortTree(nodes.value)
+
+const nodesJson = computed(() => JSON.stringify(nodes.value, null, 2))
 </script>
 <style scoped>
 .json-preview {

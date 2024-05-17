@@ -1,16 +1,13 @@
 <template>
-  <TreeViewCustomized />
-  <div style="height: 700px;"></div>
-  <TreeView />
+  <FromScratchParent />
+  <!-- <FromSlVueTreeParent />
+  <RevisedSlVueTreeParent /> -->
 </template>
 
 <script setup>
-import TreeViewCustomized from './components/TreeViewCustomized.vue'
-import TreeView from './components/original/TreeView.vue'
-
+import FromScratchParent from './components/FromScratch/Parent.vue'
+import FromSlVueTreeParent from './components/FromSlVueTree/Parent.vue'
+import RevisedSlVueTreeParent from './components/RevisedSlVueTree/Parent.vue'
 </script>
 
-<style
-  lang="scss"
-  scoped
-></style>
+<style lang="scss" scoped></style>

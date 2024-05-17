@@ -15,8 +15,7 @@
   "dependencies": {
     "@quasar/extras": "^1.16.11",
     "quasar": "^2.16.2",
-    "vue": "^3.4.21",
-    "vue-router": "^4.3.0"
+    "vue": "3.3.8"
   },
   "devDependencies": {
     "@quasar/vite-plugin": "^1.7.0",
