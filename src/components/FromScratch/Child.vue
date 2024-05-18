@@ -1,5 +1,13 @@
 <template>
-  <div class="tree-node" draggable="true" @dragstart="onDragStart" @dragover.prevent @drop="onDrop">
+  <div
+    class="tree-node"
+    draggable="true"
+    @dragstart="onDragStart"
+    @dragend="onDragEnd"
+    @dragover.prevent
+    @drop="onDrop"
+  >
+    <span>{{ node.name }}</span>
     <slot name="toggle" :node="node">
       <q-btn
         flat
@@ -10,7 +18,6 @@
       >
       </q-btn>
     </slot>
-    <span @click="toggleExpand">{{ node.name }}</span>
     <div v-if="node.isExpanded && node.children">
       <Child
         v-for="(child, index) in node.children"
@@ -24,11 +31,15 @@
 </template>
 
 <script setup lang="ts">
-import { defineAsyncComponent, ref, onMounted, PropType } from 'vue'
-import { TreeNode } from './types' // Assuming TreeNode type is defined in types.ts
+import { defineAsyncComponent, ref, onMounted } from 'vue'
+import type { PropType } from 'vue'
+import type { Node } from './types'
 
 const props = defineProps({
-  node: Object as PropType<TreeNode>
+  node: {
+    type: Object as PropType<Node>,
+    required: true
+  }
 })
 
 const emits = defineEmits(['update:node', 'drop'])
@@ -42,7 +53,7 @@ const toggleExpand = () => {
   }
 }
 
-const updateChild = (index: number, updatedChild: TreeNode) => {
+const updateChild = (index: number, updatedChild: Node) => {
   if (props.node.children) {
     props.node.children[index] = updatedChild
     emits('update:node', { ...props.node })
@@ -55,19 +66,19 @@ const onDragStart = (event: DragEvent) => {
   }
 }
 
+const onDragEnd = () => {
+  emits('drop', props.node)
+}
+
 const onDrop = (event: DragEvent) => {
   event.preventDefault()
   if (event.dataTransfer) {
-    const droppedNode = JSON.parse(event.dataTransfer.getData('node')) as TreeNode
+    const droppedNode = JSON.parse(event.dataTransfer.getData('node')) as Node
     if (!props.node.isLeaf && props.node !== droppedNode) {
       emits('drop', droppedNode, props.node)
     }
   }
 }
-
-onMounted(() => {
-  console.log('Child component mounted.')
-})
 </script>
 
 <style scoped>
