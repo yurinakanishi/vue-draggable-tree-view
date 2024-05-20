@@ -26,13 +26,14 @@
         :key="child.id"
         :node="child"
         @update:node="updateNode($event, child.id)"
+        :rootNode="rootNode"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, reactive, readonly } from 'vue'
+import { defineProps, defineEmits, reactive } from 'vue'
 import type { PropType } from 'vue'
 import type { Node } from './types'
 import Child from './Child.vue'
@@ -40,6 +41,10 @@ import Child from './Child.vue'
 const props = defineProps({
   node: {
     type: Object as PropType<Node>,
+    required: true
+  },
+  rootNode: {
+    type: Array as PropType<Node[]>,
     required: true
   }
 })
@@ -51,7 +56,7 @@ const node = reactive(props.node)
 const toggleExpand = () => {
   if (node.children) {
     node.isExpanded = !node.isExpanded
-    emits('update:node', readonly(node))
+    emits('update:node', node)
   }
 }
 
@@ -63,7 +68,7 @@ const updateNode = (updatedNode: Node, id: string) => {
       }
       return child
     })
-    emits('update:node', readonly(node))
+    emits('update:node', node)
   }
 }
 
@@ -74,8 +79,34 @@ const dragStart = (event: DragEvent) => {
 
 const drop = (event: DragEvent) => {
   event.preventDefault()
-  const nodeId = event.dataTransfer!.getData('node-id')
-  console.log('drop', nodeId, node.id)
+  const draggedNodeId = event.dataTransfer!.getData('node-id')
+  // ドロップされたノードが自分自身でないことを確認
+  if (node.id !== draggedNodeId) {
+    // ドラッグされたノードを見つける
+    const draggedNode = findNode(draggedNodeId, props.rootNode)
+    if (draggedNode) {
+      // ドラッグされたノードを現在のノードの子として追加
+      if (!node.children) {
+        node.children = []
+      }
+      node.children.push(draggedNode)
+      // ノードの状態を更新
+      emits('update:node', node)
+    }
+  }
+}
+
+const findNode = (id: string, nodes: Node[]): Node | null => {
+  for (const currentNode of nodes) {
+    if (currentNode.id === id) {
+      return currentNode
+    }
+    if (currentNode.children) {
+      const result = findNode(id, currentNode.children)
+      if (result) return result
+    }
+  }
+  return null
 }
 </script>
 
