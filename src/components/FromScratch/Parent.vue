@@ -1,5 +1,4 @@
 <template>
-  <h2>FromScratch</h2>
   <div class="flex">
     <div style="min-width: 500px">
       <Child
@@ -7,7 +6,6 @@
         :key="index"
         :node="node"
         @update:node="updateNode(index, $event)"
-        @drop="onDrop"
       />
     </div>
     <pre>{{ JSON.stringify(nodes, null, 2) }}</pre>
@@ -15,11 +13,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { reactive } from 'vue'
 import Child from './Child.vue'
 import type { Node } from './types'
 
-const nodes = ref<Node[]>([
+const nodes = reactive<Node[]>([
   {
     id: '4',
     name: 'Customer_Melon4',
@@ -141,25 +139,6 @@ const nodes = ref<Node[]>([
 ])
 
 const updateNode = (index: number, updatedNode: Node) => {
-  nodes.value[index] = updatedNode
-}
-
-const onDrop = (droppedNode: Node, targetNode: Node) => {
-  targetNode.children.push(droppedNode)
-
-  const removeNode = (nodesArray: Node[], nodeToRemove: Node) => {
-    for (let i = 0; i < nodesArray.length; i++) {
-      if (nodesArray[i] === nodeToRemove) {
-        nodesArray.splice(i, 1)
-        break
-      }
-      if (nodesArray[i].children && nodesArray[i].children.length) {
-        removeNode(nodesArray[i].children, nodeToRemove)
-      }
-    }
-    return nodesArray
-  }
-
-  nodes.value = removeNode([...nodes.value], droppedNode)
+  nodes[index] = updatedNode
 }
 </script>

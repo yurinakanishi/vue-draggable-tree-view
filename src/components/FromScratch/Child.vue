@@ -2,38 +2,40 @@
   <div
     class="tree-node"
     draggable="true"
-    @dragstart="onDragStart"
-    @dragend="onDragEnd"
+    @dragstart.stop="dragStart"
+    @drop.stop="drop"
     @dragover.prevent
-    @drop="onDrop"
+    @dragenter.prevent
   >
-    <span>{{ node.name }}</span>
-    <slot name="toggle" :node="node">
-      <q-btn
-        flat
-        dense
-        :icon="node.isLeaf ? '' : node.isExpanded ? 'mdi-chevron-down' : 'mdi-chevron-right'"
-        :class="{ 'q-ml-sm': true, rotated: node.isExpanded }"
-        @click="toggleExpand"
-      >
-      </q-btn>
-    </slot>
+    <div style="height: 30px">
+      <span>{{ node.name }}</span>
+      <span name="toggle" :node="node">
+        <q-btn
+          flat
+          dense
+          :icon="node.isLeaf ? '' : node.isExpanded ? 'mdi-chevron-down' : 'mdi-chevron-right'"
+          :class="{ 'q-ml-sm': true, rotated: node.isExpanded }"
+          @click="toggleExpand"
+        >
+        </q-btn>
+      </span>
+    </div>
     <div v-if="node.isExpanded && node.children">
       <Child
-        v-for="(child, index) in node.children"
-        :key="index"
+        v-for="child in node.children"
+        :key="child.id"
         :node="child"
-        @update:node="updateChild(index, $event)"
-        @drop="onDrop"
+        @update:node="updateNode($event, child.id)"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { defineAsyncComponent, ref, onMounted } from 'vue'
+import { defineProps, defineEmits, reactive, readonly } from 'vue'
 import type { PropType } from 'vue'
 import type { Node } from './types'
+import Child from './Child.vue'
 
 const props = defineProps({
   node: {
@@ -42,42 +44,38 @@ const props = defineProps({
   }
 })
 
-const emits = defineEmits(['update:node', 'drop'])
+const emits = defineEmits(['update:node'])
 
-const Child = defineAsyncComponent(() => import('./Child.vue'))
+const node = reactive(props.node)
 
 const toggleExpand = () => {
-  if (props.node.children) {
-    props.node.isExpanded = !props.node.isExpanded
-    emits('update:node', { ...props.node })
+  if (node.children) {
+    node.isExpanded = !node.isExpanded
+    emits('update:node', readonly(node))
   }
 }
 
-const updateChild = (index: number, updatedChild: Node) => {
-  if (props.node.children) {
-    props.node.children[index] = updatedChild
-    emits('update:node', { ...props.node })
+const updateNode = (updatedNode: Node, id: string) => {
+  if (node.children) {
+    node.children = node.children.map((child) => {
+      if (child.id === id) {
+        return updatedNode
+      }
+      return child
+    })
+    emits('update:node', readonly(node))
   }
 }
 
-const onDragStart = (event: DragEvent) => {
-  if (event.dataTransfer) {
-    event.dataTransfer.setData('node', JSON.stringify(props.node))
-  }
+const dragStart = (event: DragEvent) => {
+  event.dataTransfer!.setData('node-id', node.id)
+  console.log('dragStart', node)
 }
 
-const onDragEnd = () => {
-  emits('drop', props.node)
-}
-
-const onDrop = (event: DragEvent) => {
+const drop = (event: DragEvent) => {
   event.preventDefault()
-  if (event.dataTransfer) {
-    const droppedNode = JSON.parse(event.dataTransfer.getData('node')) as Node
-    if (!props.node.isLeaf && props.node !== droppedNode) {
-      emits('drop', droppedNode, props.node)
-    }
-  }
+  const nodeId = event.dataTransfer!.getData('node-id')
+  console.log('drop', nodeId, node.id)
 }
 </script>
 
