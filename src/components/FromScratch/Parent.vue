@@ -25,7 +25,33 @@ const nodes = reactive<Node[]>([
     nodeType: 'customer',
     isLeaf: false,
     ind: 0,
-    children: []
+    children: [
+      {
+        id: '8',
+        name: 'Location_Banana1',
+        nodeType: 'location',
+        isLeaf: false,
+        ind: 0,
+        children: [
+          {
+            id: '12',
+            name: 'AssetGroup_Grapes3',
+            nodeType: 'assetGroup',
+            isLeaf: false,
+            ind: 0,
+            children: []
+          },
+          {
+            id: '13',
+            name: 'AssetGroup_Grapes4',
+            nodeType: 'assetGroup',
+            isLeaf: false,
+            ind: 1,
+            children: []
+          }
+        ]
+      }
+    ]
   },
   {
     id: '1',
