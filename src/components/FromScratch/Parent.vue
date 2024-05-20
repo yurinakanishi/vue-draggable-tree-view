@@ -7,6 +7,7 @@
         :node="node"
         @update:node="updateNode(index, $event)"
         :rootNode="nodes"
+        :index="index"
       />
     </div>
     <pre>{{ JSON.stringify(nodes, null, 2) }}</pre>
