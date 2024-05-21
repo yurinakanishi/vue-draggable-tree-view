@@ -1,7 +1,12 @@
 <template>
   <div class="flex">
     <div style="min-width: 500px">
-      <TreeNodes :nodes="nodes" @update:node="updateNode" @move:node="insertBefore" />
+      <TreeNodes
+        :nodes="nodes"
+        @update:node="updateNode"
+        @move:node:before="insertBefore"
+        @move:node:after="insertAfter"
+      />
     </div>
     <pre>{{ JSON.stringify(nodes, null, 2) }}</pre>
   </div>
@@ -201,8 +206,12 @@ function findAndRemoveNode(nodes: Node[], nodeId: string): Node | null {
   return null
 }
 
-// ドラッグされたノードをドロップ先のノードの前に挿入する
-const insertBefore = (draggedNodeId: string, targetNodeId: string) => {
+// ドラッグされたノードをドロップ先のノードの前か後ろに挿入する
+const insertNodeRelativeTo = (
+  draggedNodeId: string,
+  targetNodeId: string,
+  position: 'before' | 'after'
+) => {
   const draggedNode = findAndRemoveNode(nodes, draggedNodeId)
   if (!draggedNode) {
     console.error('Dragged node not found')
@@ -213,9 +222,20 @@ const insertBefore = (draggedNodeId: string, targetNodeId: string) => {
   const targetNodeIndex = getTargetNodeIndex(parentNodesChildrenArray || [], targetNodeId)
   if (parentNodesChildrenArray) {
     console.log('parentNodesChildrenArray:', parentNodesChildrenArray)
-    parentNodesChildrenArray.splice(targetNodeIndex, 0, draggedNode)
+    const insertIndex = position === 'before' ? targetNodeIndex : targetNodeIndex + 1
+    parentNodesChildrenArray.splice(insertIndex, 0, draggedNode)
   } else {
     console.error('No parent node found for the target ID')
   }
+}
+
+// ドラッグされたノードをドロップ先のノードの前に挿入する
+const insertBefore = (draggedNodeId: string, targetNodeId: string) => {
+  insertNodeRelativeTo(draggedNodeId, targetNodeId, 'before')
+}
+
+// ドラッグされたノードをドロップ先のノードの後に挿入する
+const insertAfter = (draggedNodeId: string, targetNodeId: string) => {
+  insertNodeRelativeTo(draggedNodeId, targetNodeId, 'after')
 }
 </script>

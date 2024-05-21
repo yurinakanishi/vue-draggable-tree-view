@@ -2,7 +2,7 @@
   <div
     class="tree-node"
     draggable="true"
-    v-for="node in nodes"
+    v-for="(node, i) in nodes"
     :key="node.id"
     @dragover.prevent
     @dragenter.prevent
@@ -11,7 +11,7 @@
     @dragleave="onDragLeave"
   >
     <div style="height: 40px">
-      <div class="drop-area" @drop.stop="onDrop($event, node.id)"></div>
+      <div class="drop-area" @drop.stop="onDropBefore($event, node.id)"></div>
       <span>{{ node.name }}</span>
       <span name="toggle" :node="node">
         <q-btn
@@ -25,8 +25,18 @@
       </span>
     </div>
     <div v-if="node.children && node.isExpanded">
-      <TreeNodes :nodes="node.children" @update:node="updateNode" @move:node="insertBefore" />
+      <TreeNodes
+        :nodes="node.children"
+        @update:node="updateNode"
+        @move:node:before="insertBefore"
+        @move:node:after="insertAfter"
+      />
     </div>
+    <div
+      class="drop-area"
+      @drop.stop="onDropAfter($event, node.id)"
+      v-if="nodes.length - 1 === i"
+    ></div>
   </div>
 </template>
 
@@ -43,7 +53,7 @@ const props = defineProps({
   }
 })
 
-const emits = defineEmits(['update:node', 'move:node'])
+const emits = defineEmits(['update:node', 'move:node:before', 'move:node:after'])
 
 const nodes = reactive(props.nodes)
 
@@ -59,9 +69,14 @@ const updateNode = (id: string) => {
   console.log('id:', id)
 }
 
-//親にemitするcvfsstt55eferddfgssdasdfzgtt
+//insertBeforeを親にemitする
 const insertBefore = (draggedNodeId: string, targetNodeId: string) => {
-  emits('move:node', draggedNodeId, targetNodeId)
+  emits('move:node:before', draggedNodeId, targetNodeId)
+}
+
+//insertAfterを親にemitする
+const insertAfter = (draggedNodeId: string, targetNodeId: string) => {
+  emits('move:node:after', draggedNodeId, targetNodeId)
 }
 
 // どのノードがドラッグされたかをコンソールに表示する
@@ -70,11 +85,17 @@ const onDragStart = (event: DragEvent, nodeId: string) => {
   console.log('Dragged Node ID:', nodeId)
 }
 
-// どのノードがどのノードにドロップされたのかをコンソールに表示する
-const onDrop = (event: DragEvent, targetNodeId: string) => {
+// ドラッグされたノードがドロップ先に入った時にコンソールに表示する
+const onDropBefore = (event: DragEvent, targetNodeId: string) => {
   const draggedNodeId = event.dataTransfer?.getData('text') || ''
   console.log('Dropped Node ID:', draggedNodeId, 'Target Node ID:', targetNodeId)
-  emits('move:node', draggedNodeId, targetNodeId)
+  emits('move:node:before', draggedNodeId, targetNodeId)
+}
+
+const onDropAfter = (event: DragEvent, targetNodeId: string) => {
+  const draggedNodeId = event.dataTransfer?.getData('text') || ''
+  console.log('Dropped Node ID:', draggedNodeId, 'Target Node ID:', targetNodeId)
+  emits('move:node:after', draggedNodeId, targetNodeId)
 }
 
 // ドラッグされたノードがドロップ先に入った時にコンソールに表示する
@@ -95,6 +116,9 @@ const onDragLeave = () => {
 
 .drop-area {
   height: 10px;
+  border-color: black;
+  border-style: dashed;
+  border-width: 1px;
   background-color: #ccc;
 }
 </style>
