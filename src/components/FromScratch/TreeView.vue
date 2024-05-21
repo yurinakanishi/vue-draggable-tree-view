@@ -1,14 +1,7 @@
 <template>
   <div class="flex">
     <div style="min-width: 500px">
-      <Child
-        v-for="(node, index) in nodes"
-        :key="index"
-        :node="node"
-        @update:node="updateNode(index, $event)"
-        :rootNode="nodes"
-        :index="index"
-      />
+      <TreeNodes :nodes="nodes" @update:node="updateNode" @move:node="insertBefore" />
     </div>
     <pre>{{ JSON.stringify(nodes, null, 2) }}</pre>
   </div>
@@ -16,7 +9,7 @@
 
 <script setup lang="ts">
 import { reactive } from 'vue'
-import Child from './Child.vue'
+import TreeNodes from './TreeNodes.vue'
 import type { Node } from './types'
 
 const nodes = reactive<Node[]>([
@@ -166,7 +159,11 @@ const nodes = reactive<Node[]>([
   }
 ])
 
-const updateNode = (index: number, updatedNode: Node) => {
-  nodes[index] = updatedNode
+const updateNode = (updatedNode: Node) => {
+  console.log('updateNode:', updatedNode)
+}
+
+const insertBefore = (newNode: Node, referenceNode?: Node) => {
+  console.log('insertBefore:', newNode, referenceNode)
 }
 </script>

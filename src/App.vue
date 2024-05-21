@@ -1,11 +1,11 @@
 <template>
-  <FromScratchParent />
+  <TreeView />
   <!-- <FromSlVueTreeParent />
   <RevisedSlVueTreeParent /> -->
 </template>
 
 <script setup>
-import FromScratchParent from './components/FromScratch/Parent.vue'
+import TreeView from './components/FromScratch/TreeView.vue'
 // import FromSlVueTreeParent from './components/SlVueTree/Parent.vue'
 // import RevisedSlVueTreeParent from './components/RevisedSlVueTree/Parent.vue'
 </script>
