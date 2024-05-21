@@ -25,9 +25,9 @@
         </q-btn>
       </span>
     </div>
-    <div v-if="node.children && node.children.length > 0 && node.isExpanded">
+    <div v-if="node.children && node.isExpanded">
       <TreeNodes
-        :nodes="nodes"
+        :nodes="node.children"
         @update:node="updateNode(node.id)"
         @move:node="insertBefore(node.id, node.id)"
       />
@@ -57,7 +57,6 @@ const toggleExpand = (node: Node) => {
   if (node.children) {
     node.isExpanded = !node.isExpanded
   }
-  console.log('node:', node)
 }
 
 // ノードの情報を更新する
