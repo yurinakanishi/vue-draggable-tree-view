@@ -164,6 +164,6 @@ const updateNode = (updatedNode: Node) => {
 }
 
 const insertBefore = (newNode: Node, referenceNode?: Node) => {
-  console.log('insertBefore:', newNode, referenceNode)
+  console.log('From Parent: insertBefore:', newNode, referenceNode)
 }
 </script>
