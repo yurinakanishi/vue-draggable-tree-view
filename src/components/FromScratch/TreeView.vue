@@ -163,7 +163,59 @@ const updateNode = (updatedNode: Node) => {
   console.log('updateNode:', updatedNode)
 }
 
-const insertBefore = (newNode: Node, referenceNode?: Node) => {
-  console.log('From Parent: insertBefore:', newNode, referenceNode)
+// 親のノードを探してその子ノードの配列を返す
+const findParentNodesChildrenArray = (nodes: Node[], nodeId: string): Node[] | null => {
+  for (const node of nodes) {
+    if (node.id === nodeId) {
+      return nodes
+    }
+    if (node.children && node.children.length > 0) {
+      const result = findParentNodesChildrenArray(node.children, nodeId)
+      if (result) return result
+    }
+  }
+  return null
+}
+
+// ドロップ先のノードのインデックスを取得する
+const getTargetNodeIndex = (nodes: Node[], targetNodeId: string): number => {
+  for (let i = 0; i < nodes.length; i++) {
+    if (nodes[i].id === targetNodeId) {
+      return i
+    }
+  }
+  return -1
+}
+
+// ノードを探して削除する
+function findAndRemoveNode(nodes: Node[], nodeId: string): Node | null {
+  for (let i = 0; i < nodes.length; i++) {
+    if (nodes[i].id === nodeId) {
+      return nodes.splice(i, 1)[0]
+    }
+    if (nodes[i].children && nodes[i].children.length > 0) {
+      const node = findAndRemoveNode(nodes[i].children, nodeId)
+      if (node) return node
+    }
+  }
+  return null
+}
+
+// ドラッグされたノードをドロップ先のノードの前に挿入する
+const insertBefore = (draggedNodeId: string, targetNodeId: string) => {
+  const draggedNode = findAndRemoveNode(nodes, draggedNodeId)
+  if (!draggedNode) {
+    console.error('Dragged node not found')
+    return
+  }
+
+  const parentNodesChildrenArray = findParentNodesChildrenArray(nodes, targetNodeId)
+  const targetNodeIndex = getTargetNodeIndex(parentNodesChildrenArray || [], targetNodeId)
+  if (parentNodesChildrenArray) {
+    console.log('parentNodesChildrenArray:', parentNodesChildrenArray)
+    parentNodesChildrenArray.splice(targetNodeIndex, 0, draggedNode)
+  } else {
+    console.error('No parent node found for the target ID')
+  }
 }
 </script>

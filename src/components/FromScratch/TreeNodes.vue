@@ -2,17 +2,16 @@
   <div
     class="tree-node"
     draggable="true"
-    v-for="(node, i) in nodes"
+    v-for="node in nodes"
     :key="node.id"
     @dragover.prevent
     @dragenter.prevent
     @dragstart.stop="onDragStart($event, node.id)"
-    @drop.stop="onDrop($event, node.id)"
     @dragenter="onDragEnter"
     @dragleave="onDragLeave"
   >
     <div style="height: 40px">
-      <div class="drop-area"></div>
+      <div class="drop-area" @drop.stop="onDrop($event, node.id)"></div>
       <span>{{ node.name }}</span>
       <span name="toggle" :node="node">
         <q-btn
@@ -26,12 +25,7 @@
       </span>
     </div>
     <div v-if="node.children && node.isExpanded">
-      <TreeNodes
-        :nodes="node.children"
-        @update:node="updateNode"
-        @move:node="insertBefore"
-        :index="i"
-      />
+      <TreeNodes :nodes="node.children" @update:node="updateNode" @move:node="insertBefore" />
     </div>
   </div>
 </template>
@@ -46,10 +40,6 @@ const props = defineProps({
   nodes: {
     type: Array as PropType<Node[]>,
     required: true
-  },
-  index: {
-    type: Number,
-    default: 0
   }
 })
 
@@ -69,60 +59,9 @@ const updateNode = (id: string) => {
   console.log('id:', id)
 }
 
-// 親のノードを探してその子ノードの配列を返す
-const findParentNodesChildrenArray = (nodes: Node[], nodeId: string): Node[] | null => {
-  for (const node of nodes) {
-    if (node.id === nodeId) {
-      return nodes // Return the current node array if the node ID matches
-    }
-    if (node.children && node.children.length > 0) {
-      const result = findParentNodesChildrenArray(node.children, nodeId)
-      if (result) return result
-    }
-  }
-  return null
-}
-
-// ドロップ先のノードのインデックスを取得する
-const getTargetNodeIndex = (nodes: Node[], targetNodeId: string): number => {
-  for (let i = 0; i < nodes.length; i++) {
-    if (nodes[i].id === targetNodeId) {
-      return i
-    }
-  }
-  return -1
-}
-
-// // ノードを探して削除する
-function findAndRemoveNode(nodes: Node[], nodeId: string): Node | null {
-  for (let i = 0; i < nodes.length; i++) {
-    if (nodes[i].id === nodeId) {
-      return nodes.splice(i, 1)[0] // Remove and return the node
-    }
-    if (nodes[i].children && nodes[i].children.length > 0) {
-      const node = findAndRemoveNode(nodes[i].children, nodeId)
-      if (node) return node
-    }
-  }
-  return null
-}
-
-// ドラッグされたノードをドロップ先のノードの前に挿入する
+//親にemitするcvfsstt55eferddfgssdasdfzgtt
 const insertBefore = (draggedNodeId: string, targetNodeId: string) => {
-  const draggedNode = findAndRemoveNode(nodes, draggedNodeId)
-  if (!draggedNode) {
-    console.error('Dragged node not found')
-    return
-  }
-
-  const parentNodesChildrenArray = findParentNodesChildrenArray(nodes, targetNodeId)
-  const targetNodeIndex = getTargetNodeIndex(parentNodesChildrenArray || [], targetNodeId)
-  if (parentNodesChildrenArray) {
-    console.log('parentNodesChildrenArray:', parentNodesChildrenArray)
-    parentNodesChildrenArray.splice(targetNodeIndex, 0, draggedNode)
-  } else {
-    console.error('No parent node found for the target ID')
-  }
+  emits('move:node', draggedNodeId, targetNodeId)
 }
 
 // どのノードがドラッグされたかをコンソールに表示する
