@@ -7,12 +7,21 @@
     @dragover.prevent
     @dragenter.prevent
     @dragstart.stop="onDragStart($event, node.id)"
-    @dragenter="onDragEnter"
-    @dragleave="onDragLeave"
   >
     <div style="height: 40px">
-      <div class="drop-area" @drop.stop="onDropBefore($event, node.id)"></div>
-      <span>{{ node.name }}</span>
+      <div
+        class="drop-area"
+        :class="{ hovered: node.id === hoveredNodeId }"
+        @drop.stop="onDropBefore($event, node.id)"
+        @dragenter="onDragEnterDropArea(node.id)"
+        @dragleave="onDragLeaveDropArea(node.id)"
+      ></div>
+      <span
+        :class="{ hovered: node.id === hoveredNodeId }"
+        @dragenter="onDragEnterNode(node.id)"
+        @dragleave="onDragLeaveNode(node.id)"
+        >{{ node.name }}</span
+      >
       <span name="toggle" :node="node">
         <q-btn
           flat
@@ -41,8 +50,8 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, reactive } from 'vue'
-import type { PropType } from 'vue'
+import { defineProps, defineEmits, reactive, ref } from 'vue'
+import type { PropType, Ref } from 'vue'
 import type { Node } from './types'
 import TreeNodes from './TreeNodes.vue'
 
@@ -56,6 +65,9 @@ const props = defineProps({
 const emits = defineEmits(['update:node', 'move:node:before', 'move:node:after'])
 
 const nodes = reactive(props.nodes)
+
+const hoveredNodeId: Ref<string | null> = ref(null)
+const hoveredDropAreaId: Ref<string | null> = ref(null)
 
 // ノードの展開状態をトグルする
 const toggleExpand = (node: Node) => {
@@ -79,33 +91,56 @@ const insertAfter = (draggedNodeId: string, targetNodeId: string) => {
   emits('move:node:after', draggedNodeId, targetNodeId)
 }
 
-// どのノードがドラッグされたかをコンソールに表示する
+// ドラッグされたノードのIDを取得する
 const onDragStart = (event: DragEvent, nodeId: string) => {
   event.dataTransfer?.setData('text/plain', nodeId)
   console.log('Dragged Node ID:', nodeId)
 }
 
-// ドラッグされたノードがドロップ先に入った時にコンソールに表示する
+// ドラッグされたノードをドロップ先の前に移動する
 const onDropBefore = (event: DragEvent, targetNodeId: string) => {
   const draggedNodeId = event.dataTransfer?.getData('text') || ''
   console.log('Dropped Node ID:', draggedNodeId, 'Target Node ID:', targetNodeId)
+  // ドラッグ元とドロップ先が同じ場合はReturn
+  if (draggedNodeId === targetNodeId) {
+    return
+  }
   emits('move:node:before', draggedNodeId, targetNodeId)
 }
 
+// ドラッグされたノードをドロップ先の後に移動する
 const onDropAfter = (event: DragEvent, targetNodeId: string) => {
   const draggedNodeId = event.dataTransfer?.getData('text') || ''
   console.log('Dropped Node ID:', draggedNodeId, 'Target Node ID:', targetNodeId)
+  // ドラッグ元とドロップ先が同じ場合はReturn
+  if (draggedNodeId === targetNodeId) {
+    return
+  }
   emits('move:node:after', draggedNodeId, targetNodeId)
 }
 
-// ドラッグされたノードがドロップ先に入った時にコンソールに表示する
-const onDragEnter = () => {
-  console.log('onDragEnter')
+// ドラッグしているノードがノードに入った時に、そのノードのIDを取得し、hoveredNodeIdにセットする
+const onDragEnterNode = (nodeId: string) => {
+  hoveredNodeId.value = nodeId
 }
 
-// ドラッグされたノードがドロップ先から出た時にコンソールに表示する
-const onDragLeave = () => {
-  console.log('onDragLeave')
+// ドラッグしているノードがノードから出た時に、hoveredNodeIdをnullにする
+const onDragLeaveNode = (nodeId: string) => {
+  if (hoveredNodeId.value === nodeId) {
+    hoveredNodeId.value = null
+  }
+}
+
+// ドラッグしているノードがドロップエリアに入った時に、そのノードのIDを取得し、hoveredDropAreaIdにセットする
+const onDragEnterDropArea = (nodeId: string) => {
+  hoveredDropAreaId.value = nodeId
+}
+
+// ドラッグしているノードがドロップエリアから出た時に、hoveredDropAreaIdをnullにする
+const onDragLeaveDropArea = (nodeId: string) => {
+  if (hoveredDropAreaId.value === nodeId) {
+    hoveredDropAreaId.value = null
+  }
 }
 </script>
 
@@ -120,5 +155,13 @@ const onDragLeave = () => {
   border-style: dashed;
   border-width: 1px;
   background-color: #ccc;
+}
+
+.hovered {
+  background-color: #02ccff;
+}
+
+.drop-area.hovered {
+  background-color: #00ff55;
 }
 </style>
