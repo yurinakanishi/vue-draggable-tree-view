@@ -16,6 +16,7 @@
         @dragenter="onDragEnterDropArea(node.id)"
       ></div>
       <span
+        class="node-name"
         :class="{ hovered: node.id === hoveredNodeId }"
         @dragenter="onDragEnterNodeName(node.id)"
         >{{ node.name }}</span
@@ -155,7 +156,7 @@ const onDragEnterDropArea = (nodeId: string) => {
   background-color: #ccc;
 }
 
-.hovered {
+.node-name.hovered {
   background-color: #02ccff;
 }
 
