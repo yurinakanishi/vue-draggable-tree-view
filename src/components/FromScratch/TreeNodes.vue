@@ -18,8 +18,8 @@
       ></div>
       <span
         :class="{ hovered: node.id === hoveredNodeId }"
-        @dragenter="onDragEnterNode(node.id)"
-        @dragleave="onDragLeaveNode(node.id)"
+        @dragenter="onDragEnterNodeName(node.id)"
+        @dragleave="onDragLeaveNodeName(node.id)"
         >{{ node.name }}</span
       >
       <span name="toggle" :node="node">
@@ -120,12 +120,12 @@ const onDropAfter = (event: DragEvent, targetNodeId: string) => {
 }
 
 // ドラッグしているノードがノードに入った時に、そのノードのIDを取得し、hoveredNodeIdにセットする
-const onDragEnterNode = (nodeId: string) => {
+const onDragEnterNodeName = (nodeId: string) => {
   hoveredNodeId.value = nodeId
 }
 
 // ドラッグしているノードがノードから出た時に、hoveredNodeIdをnullにする
-const onDragLeaveNode = (nodeId: string) => {
+const onDragLeaveNodeName = (nodeId: string) => {
   if (hoveredNodeId.value === nodeId) {
     hoveredNodeId.value = null
   }
