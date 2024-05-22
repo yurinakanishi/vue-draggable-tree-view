@@ -6,6 +6,7 @@
         @update:node="updateNode"
         @move:node:before="insertBefore"
         @move:node:after="insertAfter"
+        @move:node:inside="insertInside"
       />
     </div>
     <pre>{{ JSON.stringify(nodes, null, 2) }}</pre>
@@ -67,7 +68,7 @@ const nodes = reactive<Node[]>([
         ind: 0,
         children: [
           {
-            id: '4',
+            id: '47',
             name: 'Asset_Apple2',
             nodeType: 'asset',
             isLeaf: true,
@@ -224,6 +225,7 @@ const insertNodeRelativeTo = (
     console.log('parentNodesChildrenArray:', parentNodesChildrenArray)
     const insertIndex = position === 'before' ? targetNodeIndex : targetNodeIndex + 1
     parentNodesChildrenArray.splice(insertIndex, 0, draggedNode)
+    console.log('parentNodesChildrenArrayAfter:', parentNodesChildrenArray)
   } else {
     console.error('No parent node found for the target ID')
   }
@@ -237,5 +239,43 @@ const insertBefore = (draggedNodeId: string, targetNodeId: string) => {
 // ドラッグされたノードをドロップ先のノードの後に挿入する
 const insertAfter = (draggedNodeId: string, targetNodeId: string) => {
   insertNodeRelativeTo(draggedNodeId, targetNodeId, 'after')
+}
+
+const insertInside = (draggedNodeId: string, targetNodeId: string) => {
+  // Find and remove the dragged node from its current location
+  const draggedNode = findAndRemoveNode(nodes, draggedNodeId)
+  if (!draggedNode) {
+    console.error('Dragged node not found')
+    return
+  }
+
+  // Function to recursively find a node by ID
+  const findNode = (nodes: Node[], nodeId: string): Node | null => {
+    for (const node of nodes) {
+      if (node.id === nodeId) {
+        return node
+      }
+      if (node.children) {
+        const foundNode = findNode(node.children, nodeId)
+        if (foundNode) {
+          return foundNode
+        }
+      }
+    }
+    return null
+  }
+
+  // Find the target node where the dragged node will be inserted
+  const targetNode = findNode(nodes, targetNodeId)
+  if (!targetNode) {
+    console.error('Target node not found')
+    return
+  }
+
+  // Initialize the children array if it does not exist
+  targetNode.children = targetNode.children || []
+  // Insert the dragged node as a child of the target node
+  targetNode.children.push(draggedNode)
+  console.log('Node inserted inside:', targetNode)
 }
 </script>
