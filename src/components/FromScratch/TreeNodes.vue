@@ -14,12 +14,10 @@
         :class="{ hovered: node.id === hoveredNodeId }"
         @drop.stop="onDropBefore($event, node.id)"
         @dragenter="onDragEnterDropArea(node.id)"
-        @dragleave="onDragLeaveDropArea(node.id)"
       ></div>
       <span
         :class="{ hovered: node.id === hoveredNodeId }"
         @dragenter="onDragEnterNodeName(node.id)"
-        @dragleave="onDragLeaveNodeName(node.id)"
         >{{ node.name }}</span
       >
       <span name="toggle" :node="node">
@@ -125,11 +123,11 @@ const onDragEnterNodeName = (nodeId: string) => {
 }
 
 // ドラッグしているノードがノードから出た時に、hoveredNodeIdをnullにする
-const onDragLeaveNodeName = (nodeId: string) => {
-  if (hoveredNodeId.value === nodeId) {
-    hoveredNodeId.value = null
-  }
-}
+// const onDragLeaveNodeName = (nodeId: string) => {
+//   if (hoveredNodeId.value === nodeId) {
+//     hoveredNodeId.value = null
+//   }
+// }
 
 // ドラッグしているノードがドロップエリアに入った時に、そのノードのIDを取得し、hoveredDropAreaIdにセットする
 const onDragEnterDropArea = (nodeId: string) => {
@@ -137,11 +135,11 @@ const onDragEnterDropArea = (nodeId: string) => {
 }
 
 // ドラッグしているノードがドロップエリアから出た時に、hoveredDropAreaIdをnullにする
-const onDragLeaveDropArea = (nodeId: string) => {
-  if (hoveredDropAreaId.value === nodeId) {
-    hoveredDropAreaId.value = null
-  }
-}
+// const onDragLeaveDropArea = (nodeId: string) => {
+//   if (hoveredDropAreaId.value === nodeId) {
+//     hoveredDropAreaId.value = null
+//   }
+// }
 </script>
 
 <style scoped>
