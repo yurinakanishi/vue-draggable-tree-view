@@ -3,10 +3,13 @@
     <div style="min-width: 500px">
       <TreeNodes
         :nodes="nodes"
-        @update:node="updateNode"
+        :hoveredNode="hoveredNode"
+        :draggingNode="draggingNode"
         @move:node:before="insertBefore"
         @move:node:after="insertAfter"
-        @move:node:inside="insertInside"
+        @move:node:appendChild="appendChild"
+        @update:hoveredNode="handleHoveredNodeUpdate"
+        @update:draggingNode="handleDraggingNodeUpdate"
       />
     </div>
     <pre>{{ JSON.stringify(nodes, null, 2) }}</pre>
@@ -14,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import TreeNodes from './TreeNodes.vue'
 import type { Node } from './types'
 
@@ -165,9 +168,8 @@ const nodes = reactive<Node[]>([
   }
 ])
 
-const updateNode = (updatedNode: Node) => {
-  console.log('updateNode:', updatedNode)
-}
+const hoveredNode = ref<Node | null>(null)
+const draggingNode = ref<Node | null>(null)
 
 // 親のノードを探してその子ノードの配列を返す
 const findParentNodesChildrenArray = (nodes: Node[], nodeId: string): Node[] | null => {
@@ -231,6 +233,16 @@ const insertNodeRelativeTo = (
   }
 }
 
+const handleHoveredNodeUpdate = (id: string | null) => {
+  console.log('Hovered Node ID:', id)
+  hoveredNode.value = id ? nodes.find((node) => node.id === id) || null : null
+}
+
+const handleDraggingNodeUpdate = (id: string | null) => {
+  console.log('Dragging Node ID:', id)
+  draggingNode.value = id ? nodes.find((node) => node.id === id) || null : null
+}
+
 // ドラッグされたノードをドロップ先のノードの前に挿入する
 const insertBefore = (draggedNodeId: string, targetNodeId: string) => {
   insertNodeRelativeTo(draggedNodeId, targetNodeId, 'before')
@@ -241,7 +253,7 @@ const insertAfter = (draggedNodeId: string, targetNodeId: string) => {
   insertNodeRelativeTo(draggedNodeId, targetNodeId, 'after')
 }
 
-const insertInside = (draggedNodeId: string, targetNodeId: string) => {
+const appendChild = (draggedNodeId: string, targetNodeId: string) => {
   // Find and remove the dragged node from its current location
   const draggedNode = findAndRemoveNode(nodes, draggedNodeId)
   if (!draggedNode) {

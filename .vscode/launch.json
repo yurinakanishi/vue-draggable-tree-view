@@ -5,11 +5,11 @@
       "type": "chrome",
       "request": "launch",
       "name": "Front",
-      "url": "https://localhost:5179",
-      "webRoot": "${workspaceFolder}",
-      "sourceMaps": true,
-      "preLaunchTask": "run",
-      "postDebugTask": "stop"
+      "url": "http://localhost:5179",
+      "webRoot": "${workspaceFolder}"
+      // "sourceMaps": true
+      // "preLaunchTask": "run",
+      // "postDebugTask": "stop"
     }
   ]
 }
