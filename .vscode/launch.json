@@ -6,10 +6,10 @@
       "request": "launch",
       "name": "Front",
       "url": "http://localhost:5179",
-      "webRoot": "${workspaceFolder}"
-      // "sourceMaps": true
-      // "preLaunchTask": "run",
-      // "postDebugTask": "stop"
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "preLaunchTask": "run",
+      "postDebugTask": "stop"
     }
   ]
 }

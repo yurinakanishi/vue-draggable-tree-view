@@ -5,8 +5,8 @@
     v-for="(node, i) in nodes"
     :key="node.id"
     @dragover.prevent
-    @dragenter="onDragEnter(node.id)"
-    @dragleave.stop="onDragLeave"
+    @dragenter.stop="onDragEnter(node.id)"
+    @dragleave.stop="onDragLeave(node.id)"
     @dragstart.stop="onDragStart($event, node.id)"
     @dragend.stop="onDragEnd"
   >
@@ -14,18 +14,20 @@
       <div
         class="drop-area"
         :class="{
-          hovered: node.id === hoveredDropBeforeAreaId && isHoveredToDropBeforeArea && draggingNode
+          hovered: node.id === hoveredNode?.id && isHoveredToDropBeforeArea
         }"
+        @dragover.prevent
         @drop.stop="onDropBefore($event, node.id)"
-        @dragenter.stop="onDragEnterDropBeforeArea(node.id)"
-        @dragleave.stop="onDragLeaveDropBeforeArea(node.id)"
+        @dragenter="onDragEnterDropBeforeArea"
+        @dragleave="onDragLeaveDropBeforeArea"
       ></div>
       <div
         class="node-name"
-        :class="{ hovered: node.id === hoveredNode?.id && isHoveredToNodeName && draggingNode }"
-        @dragenter.stop="onDragEnterNodeName(node.id)"
-        @dragleave.stop="onDragLeaveNodeName"
-        @drop.stop="onDropInside($event, node.id)"
+        :class="{ hovered: node.id === hoveredNode?.id && isHoveredToNodeName }"
+        @dragover.prevent
+        @dragenter="onDragEnterNodeName(node.id)"
+        @dragleave="onDragLeaveNodeName"
+        @drop.stop="onDropAppendChild($event, node.id)"
       >
         <span :class="{ 'node-child': draggingNode }">{{ node.name }}</span>
         <span :class="{ 'node-child': draggingNode }" name="toggle" :node="node">
@@ -44,7 +46,8 @@
       <TreeNodes
         :hoveredNode="hoveredNode"
         :nodes="node.children"
-        @update:node="updateNode"
+        @update:hoveredNode="handleHoveredNodeUpdate"
+        @update:draggingNode="handleDraggingNodeUpdate"
         @move:node:before="insertBefore"
         @move:node:after="insertAfter"
         @move:node:appendChild="appendChild"
@@ -53,11 +56,12 @@
     <div
       class="drop-area"
       :class="{
-        hovered: node.id === hoveredDropAfterAreaId && isHoveredToDropAfterArea && draggingNode
+        hovered: node.id === hoveredNode?.id && isHoveredToDropAfterArea
       }"
+      @dragover.prevent
       @drop.stop="onDropAfter($event, node.id)"
-      @dragenter.stop="onDragEnterDropAfterArea(node.id)"
-      @dragleave.stop="onDragLeaveDropAfterArea(node.id)"
+      @dragenter.stop="onDragEnterDropAfterArea"
+      @dragleave.stop="onDragLeaveDropAfterArea"
       v-if="nodes.length - 1 === i"
     ></div>
   </div>
@@ -92,8 +96,6 @@ const emits = defineEmits<{
 
 const nodes = reactive(props.nodes)
 
-const hoveredDropBeforeAreaId: Ref<string | null> = ref(null)
-const hoveredDropAfterAreaId: Ref<string | null> = ref(null)
 const isHoveredToDropBeforeArea = ref(false)
 const isHoveredToDropAfterArea = ref(false)
 const isHoveredToNodeName = ref(false)
@@ -125,6 +127,16 @@ const appendChild = (draggedNodeId: string, targetNodeId: string) => {
   emits('move:node:appendChild', draggedNodeId, targetNodeId)
 }
 
+//handleHoveredNodeUpdateを親にemitする
+const handleHoveredNodeUpdate = (nodeId: string | null) => {
+  emits('update:hoveredNode', nodeId)
+}
+
+//handleDraggingNodeUpdateを親にemitする
+const handleDraggingNodeUpdate = (nodeId: string | null) => {
+  emits('update:draggingNode', nodeId)
+}
+
 // ドラッグされたノードのIDを取得する
 const onDragStart = (event: DragEvent, nodeId: string) => {
   event.dataTransfer?.setData('text/plain', nodeId)
@@ -132,6 +144,7 @@ const onDragStart = (event: DragEvent, nodeId: string) => {
 }
 
 const onDragEnd = () => {
+  console.log('onDragEnd')
   emits('update:draggingNode', null)
 }
 
@@ -143,6 +156,8 @@ const onDropBefore = (event: DragEvent, targetNodeId: string) => {
   if (draggedNodeId === targetNodeId) {
     return
   }
+  emits('update:hoveredNode', null)
+  emits('update:draggingNode', null)
   emits('move:node:before', draggedNodeId, targetNodeId)
 }
 
@@ -154,16 +169,20 @@ const onDropAfter = (event: DragEvent, targetNodeId: string) => {
   if (draggedNodeId === targetNodeId) {
     return
   }
+  emits('update:hoveredNode', null)
+  emits('update:draggingNode', null)
   emits('move:node:after', draggedNodeId, targetNodeId)
 }
 
-const onDropInside = (event: DragEvent, nodeId: string) => {
+const onDropAppendChild = (event: DragEvent, nodeId: string) => {
   const draggedNodeId = event.dataTransfer?.getData('text') || ''
   console.log('Dropped Node ID:', draggedNodeId, 'Target Node ID:', nodeId)
   // ドラッグ元とドロップ先が同じ場合はReturn
   if (draggedNodeId === nodeId) {
     return
   }
+  emits('update:hoveredNode', null)
+  emits('update:draggingNode', null)
   emits('move:node:appendChild', draggedNodeId, nodeId)
 }
 
@@ -172,12 +191,11 @@ const onDragEnter = (nodeId: string) => {
   emits('update:hoveredNode', nodeId)
 }
 
-const onDragLeave = () => {
-  emits('update:hoveredNode', null)
+const onDragLeave = (nodeId: string) => {
+  console.log('onDragLeave from:', nodeId)
 }
 
 const onDragEnterNodeName = (nodeId: string) => {
-  console.log('onDragEnterNodeName:', nodeId)
   isHoveredToNodeName.value = true
 }
 
@@ -186,30 +204,22 @@ const onDragLeaveNodeName = () => {
 }
 
 // ドラッグしているノードがドロップエリアに入った時に、そのノードのIDを取得し、hoveredDropBeforeAreaIdにセットする
-const onDragEnterDropBeforeArea = (nodeId: string) => {
-  hoveredDropBeforeAreaId.value = nodeId
+const onDragEnterDropBeforeArea = () => {
   isHoveredToDropBeforeArea.value = true
 }
 
 // ドラッグしているノードがドロップエリアから出た時に、hoveredDropBeforeAreaIdをnullにする
-const onDragLeaveDropBeforeArea = (nodeId: string) => {
-  if (hoveredDropBeforeAreaId.value === nodeId) {
-    hoveredDropBeforeAreaId.value = null
-  }
+const onDragLeaveDropBeforeArea = () => {
   isHoveredToDropBeforeArea.value = false
 }
 
 // ドラッグしているノードがドロップエリアに入った時に、そのノードのIDを取得し、hoveredDropAfterAreaIdにセットする
-const onDragEnterDropAfterArea = (nodeId: string) => {
-  hoveredDropAfterAreaId.value = nodeId
+const onDragEnterDropAfterArea = () => {
   isHoveredToDropAfterArea.value = true
 }
 
 // ドラッグしているノードがドロップエリアから出た時に、hoveredDropAfterAreaIdをnullにする
-const onDragLeaveDropAfterArea = (nodeId: string) => {
-  if (hoveredDropAfterAreaId.value === nodeId) {
-    hoveredDropAfterAreaId.value = null
-  }
+const onDragLeaveDropAfterArea = () => {
   isHoveredToDropAfterArea.value = false
 }
 </script>
@@ -221,9 +231,6 @@ const onDragLeaveDropAfterArea = (nodeId: string) => {
 
 .drop-area {
   height: 10px;
-  border-color: black;
-  border-style: dashed;
-  border-width: 1px;
   background-color: #ccc;
 }
 

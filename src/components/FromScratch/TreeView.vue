@@ -235,12 +235,12 @@ const insertNodeRelativeTo = (
 
 const handleHoveredNodeUpdate = (id: string | null) => {
   console.log('Hovered Node ID:', id)
-  hoveredNode.value = id ? nodes.find((node) => node.id === id) || null : null
+  if (id) hoveredNode.value = findNode(nodes, id) || null
 }
 
 const handleDraggingNodeUpdate = (id: string | null) => {
   console.log('Dragging Node ID:', id)
-  draggingNode.value = id ? nodes.find((node) => node.id === id) || null : null
+  if (id) draggingNode.value = findNode(nodes, id) || null
 }
 
 // ドラッグされたノードをドロップ先のノードの前に挿入する
@@ -253,28 +253,28 @@ const insertAfter = (draggedNodeId: string, targetNodeId: string) => {
   insertNodeRelativeTo(draggedNodeId, targetNodeId, 'after')
 }
 
+// Function to recursively find a node by ID
+const findNode = (nodes: Node[], nodeId: string): Node | null => {
+  for (const node of nodes) {
+    if (node.id === nodeId) {
+      return node
+    }
+    if (node.children) {
+      const foundNode = findNode(node.children, nodeId)
+      if (foundNode) {
+        return foundNode
+      }
+    }
+  }
+  return null
+}
+
 const appendChild = (draggedNodeId: string, targetNodeId: string) => {
   // Find and remove the dragged node from its current location
   const draggedNode = findAndRemoveNode(nodes, draggedNodeId)
   if (!draggedNode) {
     console.error('Dragged node not found')
     return
-  }
-
-  // Function to recursively find a node by ID
-  const findNode = (nodes: Node[], nodeId: string): Node | null => {
-    for (const node of nodes) {
-      if (node.id === nodeId) {
-        return node
-      }
-      if (node.children) {
-        const foundNode = findNode(node.children, nodeId)
-        if (foundNode) {
-          return foundNode
-        }
-      }
-    }
-    return null
   }
 
   // Find the target node where the dragged node will be inserted
