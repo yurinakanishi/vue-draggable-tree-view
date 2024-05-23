@@ -1,6 +1,6 @@
 <template>
   <div
-    class="tree-node"
+    class="tree-node-container"
     draggable="true"
     v-for="(node, i) in nodes"
     :key="node.id"
@@ -10,7 +10,7 @@
     @dragstart.stop="onDragStart($event, node.id)"
     @dragend.stop="onDragEnd"
   >
-    <div style="height: 40px">
+    <div class="tree-node">
       <div
         class="drop-area"
         :class="{
@@ -20,7 +20,9 @@
         @drop.stop="onDropBefore($event, node.id)"
         @dragenter="onDragEnterDropBeforeArea"
         @dragleave="onDragLeaveDropBeforeArea"
-      ></div>
+      >
+        <div class="bar"></div>
+      </div>
       <div
         class="node-name"
         :class="{ hovered: node.id === hoveredNode?.id && isHoveredToNodeName }"
@@ -40,11 +42,13 @@
           >
           </q-btn>
         </span>
+        <span :class="{ 'node-child': draggingNode }">{{ isHoveredToNodeName }}</span>
       </div>
     </div>
     <div v-if="node.children && node.isExpanded">
       <TreeNodes
         :hoveredNode="hoveredNode"
+        :draggingNode="draggingNode"
         :nodes="node.children"
         @update:hoveredNode="handleHoveredNodeUpdate"
         @update:draggingNode="handleDraggingNodeUpdate"
@@ -63,7 +67,9 @@
       @dragenter.stop="onDragEnterDropAfterArea"
       @dragleave.stop="onDragLeaveDropAfterArea"
       v-if="nodes.length - 1 === i"
-    ></div>
+    >
+      <div class="bar"></div>
+    </div>
   </div>
 </template>
 
@@ -105,11 +111,6 @@ const toggleExpand = (node: Node) => {
   if (node.children) {
     node.isExpanded = !node.isExpanded
   }
-}
-
-// ノードの情報を更新する
-const updateNode = (id: string) => {
-  console.log('id:', id)
 }
 
 //insertBeforeを親にemitする
@@ -200,6 +201,7 @@ const onDragEnterNodeName = (nodeId: string) => {
 }
 
 const onDragLeaveNodeName = () => {
+  console.log('onDragLeaveNodeName')
   isHoveredToNodeName.value = false
 }
 
@@ -225,21 +227,34 @@ const onDragLeaveDropAfterArea = () => {
 </script>
 
 <style scoped>
-.tree-node {
+.tree-node-container {
   margin-left: 20px;
+}
+
+.tree-node {
+  height: 40px;
 }
 
 .drop-area {
   height: 10px;
   background-color: #ccc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.drop-area.hovered .bar {
+  width: 100%;
+  height: 3px;
+  background-color: #ff0606;
+}
+
+.node-name {
+  border-radius: 5px;
 }
 
 .node-name.hovered {
-  background-color: #02ccff;
-}
-
-.drop-area.hovered {
-  background-color: #00ff55;
+  background-color: rgba(0, 153, 255, 0.329);
 }
 
 .node-child {
