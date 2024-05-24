@@ -42,7 +42,10 @@
           >
           </q-btn>
         </span>
-        <span :class="{ 'node-child': draggingNode }">{{ isHoveredToNodeName }}</span>
+        <span>{{ isHoveredToDropBeforeArea }}</span>
+        <!-- <span :class="{ 'node-child': draggingNode }"
+          >{{ isHoveredToNodeName }}, {{ node.id }}</span
+        > -->
       </div>
     </div>
     <div v-if="node.children && node.isExpanded">
@@ -111,6 +114,18 @@ const toggleExpand = (node: Node) => {
   if (node.children) {
     node.isExpanded = !node.isExpanded
   }
+}
+
+const DropBeforeAreaDDCounter = ref(0)
+
+const onDragEnterDropBeforeAreaBar = () => {
+  DropBeforeAreaDDCounter.value++
+  console.log('onDragEnterDropBeforeAreaBar:', DropBeforeAreaDDCounter.value)
+}
+
+const onDragLeaveDropBeforeAreaBar = () => {
+  DropBeforeAreaDDCounter.value--
+  console.log('onDragLeaveDropBeforeAreaBar:', DropBeforeAreaDDCounter.value)
 }
 
 //insertBeforeを親にemitする

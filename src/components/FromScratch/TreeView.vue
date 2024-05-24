@@ -235,12 +235,21 @@ const insertNodeRelativeTo = (
 
 const handleHoveredNodeUpdate = (id: string | null) => {
   console.log('Hovered Node ID:', id)
-  if (id) hoveredNode.value = findNode(nodes, id) || null
+  if (!id) {
+    hoveredNode.value = null
+    return
+  }
+
+  hoveredNode.value = findNode(nodes, id) || null
 }
 
 const handleDraggingNodeUpdate = (id: string | null) => {
   console.log('Dragging Node ID:', id)
-  if (id) draggingNode.value = findNode(nodes, id) || null
+  if (!id) {
+    draggingNode.value = null
+    return
+  }
+  draggingNode.value = findNode(nodes, id)
 }
 
 // ドラッグされたノードをドロップ先のノードの前に挿入する
