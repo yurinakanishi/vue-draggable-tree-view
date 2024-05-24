@@ -3,7 +3,8 @@ export type Node = {
   name: string
   nodeType: NodeType
   isLeaf: boolean
-  ind: number
+  customerId: string | null
+  index: number
   children: Node[]
   isExpanded?: boolean
   isDragging?: boolean

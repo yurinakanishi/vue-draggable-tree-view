@@ -5,9 +5,9 @@
     v-for="(node, i) in nodes"
     :key="node.id"
     @dragover.prevent
-    @dragenter.stop="onDragEnter(node.id)"
-    @dragleave.stop="onDragLeave(node.id)"
-    @dragstart.stop="onDragStart($event, node.id)"
+    @dragenter.stop="onDragEnter(node)"
+    @dragleave.stop="onDragLeave(node)"
+    @dragstart.stop="onDragStart($event, node)"
     @dragend.stop="onDragEnd"
   >
     <div class="tree-node">
@@ -17,7 +17,7 @@
           hovered: node.id === hoveredNode?.id && isHoveredToDropBeforeArea
         }"
         @dragover.prevent
-        @drop.stop="onDropBefore($event, node.id)"
+        @drop.stop="onDropBefore($event, node)"
         @dragenter.stop
         @dragleave.stop
         @dragenter="onDragEnterDropBeforeArea"
@@ -27,9 +27,9 @@
         class="node-name"
         :class="{ hovered: node.id === hoveredNode?.id && isHoveredToNodeName }"
         @dragover.prevent
-        @dragenter="onDragEnterNodeName(node.id)"
+        @dragenter="onDragEnterNodeName(node)"
         @dragleave="onDragLeaveNodeName"
-        @drop.stop="onDropAppendChild($event, node.id)"
+        @drop.stop="onDropAppendChild($event, node)"
       >
         <span :class="{ 'node-child': draggingNode }">{{ node.name }}</span>
         <span :class="{ 'node-child': draggingNode }" name="toggle" :node="node">
@@ -66,7 +66,7 @@
         hovered: node.id === hoveredNode?.id && isHoveredToDropAfterArea
       }"
       @dragover.prevent
-      @drop.stop="onDropAfter($event, node.id)"
+      @drop.stop="onDropAfter($event, node)"
       @dragenter.stop="onDragEnterDropAfterArea"
       @dragleave.stop="onDragLeaveDropAfterArea"
       v-if="nodes.length - 1 === i"
@@ -94,11 +94,11 @@ const props = defineProps({
 })
 
 const emits = defineEmits<{
-  (event: 'update:hoveredNode', nodeId: string | null): void
-  (event: 'update:draggingNode', nodeId: string | null): void
-  (event: 'move:node:before', draggedNodeId: string, targetNodeId: string): void
-  (event: 'move:node:after', draggedNodeId: string, targetNodeId: string): void
-  (event: 'move:node:appendChild', draggedNodeId: string, targetNodeId: string): void
+  (event: 'update:hoveredNode', node: Node | null): void
+  (event: 'update:draggingNode', node: Node | null): void
+  (event: 'move:node:before', draggedNode: Node, targetNode: Node): void
+  (event: 'move:node:after', draggedNode: Node, targetNode: Node): void
+  (event: 'move:node:appendChild', draggedNode: Node, targetNode: Node): void
 }>()
 
 const nodes = reactive(props.nodes)
@@ -115,79 +115,92 @@ const toggleExpand = (node: Node) => {
 }
 
 //insertBeforeを親にemitする
-const insertBefore = (draggedNodeId: string, targetNodeId: string) => {
-  emits('move:node:before', draggedNodeId, targetNodeId)
+const insertBefore = (draggedNode: Node, targetNode: Node) => {
+  emits('move:node:before', draggedNode, targetNode)
 }
 
 //insertAfterを親にemitする
-const insertAfter = (draggedNodeId: string, targetNodeId: string) => {
-  emits('move:node:after', draggedNodeId, targetNodeId)
+const insertAfter = (draggedNode: Node, targetNode: Node) => {
+  emits('move:node:after', draggedNode, targetNode)
 }
 
 //appendChildを親にemitする
-const appendChild = (draggedNodeId: string, targetNodeId: string) => {
-  emits('move:node:appendChild', draggedNodeId, targetNodeId)
+const appendChild = (draggedNode: Node, targetNode: Node) => {
+  emits('move:node:appendChild', draggedNode, targetNode)
 }
 
 //handleHoveredNodeUpdateを親にemitする
-const handleHoveredNodeUpdate = (nodeId: string | null) => {
-  emits('update:hoveredNode', nodeId)
+const handleHoveredNodeUpdate = (node: Node | null) => {
+  emits('update:hoveredNode', node)
 }
 
 //handleDraggingNodeUpdateを親にemitする
-const handleDraggingNodeUpdate = (nodeId: string | null) => {
-  emits('update:draggingNode', nodeId)
+const handleDraggingNodeUpdate = (node: Node | null) => {
+  emits('update:draggingNode', node)
 }
 
 // ドラッグされたノードのIDを取得する
-const onDragStart = (event: DragEvent, nodeId: string) => {
-  event.dataTransfer?.setData('text/plain', nodeId)
-  emits('update:draggingNode', nodeId)
+const onDragStart = (event: DragEvent, node: Node) => {
+  event.dataTransfer?.setData('application/json', JSON.stringify(node))
+  emits('update:draggingNode', node)
 }
 
 const onDragEnd = () => {
   emits('update:draggingNode', null)
 }
 
-// ドラッグされたノードをドロップ先の前に移動する
-const onDropBefore = (event: DragEvent, targetNodeId: string) => {
-  const draggedNodeId = event.dataTransfer?.getData('text') || ''
-  if (draggedNodeId === targetNodeId) {
-    return
+function getNodeFromEvent(event: DragEvent): Node | null {
+  const jsonData = event.dataTransfer?.getData('application/json')
+  if (!jsonData) {
+    console.error('No data available')
+    return null
   }
+
+  try {
+    return JSON.parse(jsonData)
+  } catch (error) {
+    console.error('Error parsing JSON data:', error)
+    return null
+  }
+}
+
+// Moves the dragged node to a position before the target node upon dropping.
+const onDropBefore = (event: DragEvent, targetNode: Node) => {
+  const node = getNodeFromEvent(event)
+  if (!node) return
+
   emits('update:hoveredNode', null)
   emits('update:draggingNode', null)
-  emits('move:node:before', draggedNodeId, targetNodeId)
+  emits('move:node:before', node, targetNode)
 }
 
-// ドラッグされたノードをドロップ先の後に移動する
-const onDropAfter = (event: DragEvent, targetNodeId: string) => {
-  const draggedNodeId = event.dataTransfer?.getData('text') || ''
-  if (draggedNodeId === targetNodeId) {
-    return
-  }
+// Moves the dragged node to a position after the target node upon dropping.
+const onDropAfter = (event: DragEvent, targetNode: Node) => {
+  const node = getNodeFromEvent(event)
+  if (!node) return
+
   emits('update:hoveredNode', null)
   emits('update:draggingNode', null)
-  emits('move:node:after', draggedNodeId, targetNodeId)
+  emits('move:node:after', node, targetNode)
 }
 
-const onDropAppendChild = (event: DragEvent, nodeId: string) => {
-  const draggedNodeId = event.dataTransfer?.getData('text') || ''
-  if (draggedNodeId === nodeId) {
-    return
-  }
+// Appends the dragged node as a child of the target node upon dropping.
+const onDropAppendChild = (event: DragEvent, targetNode: Node) => {
+  const node = getNodeFromEvent(event)
+  if (!node) return
+
   emits('update:hoveredNode', null)
   emits('update:draggingNode', null)
-  emits('move:node:appendChild', draggedNodeId, nodeId)
+  emits('move:node:appendChild', node, targetNode)
 }
 
-const onDragEnter = (nodeId: string) => {
-  emits('update:hoveredNode', nodeId)
+const onDragEnter = (node: Node) => {
+  emits('update:hoveredNode', node)
 }
 
-const onDragLeave = (nodeId: string) => {}
+const onDragLeave = (node: Node) => {}
 
-const onDragEnterNodeName = (nodeId: string) => {
+const onDragEnterNodeName = (node: Node) => {
   isHoveredToNodeName.value = true
 }
 

@@ -21,35 +21,39 @@ import { reactive, ref } from 'vue'
 import TreeNodes from './TreeNodes.vue'
 import type { Node, NodeType } from './types'
 
-const nodes = reactive<Node[]>([
+const defaultNodes = reactive<Node[]>([
   {
     id: '4',
     name: 'Customer_Melon4',
     nodeType: 'customer',
+    customerId: null,
     isLeaf: false,
-    ind: 0,
+    index: 3,
     children: [
       {
         id: '8',
         name: 'Location_Banana1',
         nodeType: 'location',
+        customerId: '4',
         isLeaf: false,
-        ind: 0,
+        index: 0,
         children: [
           {
             id: '12',
             name: 'AssetGroup_Grapes3',
             nodeType: 'assetGroup',
+            customerId: '4',
             isLeaf: false,
-            ind: 0,
+            index: 0,
             children: []
           },
           {
             id: '13',
             name: 'AssetGroup_Grapes4',
             nodeType: 'assetGroup',
+            customerId: '4',
             isLeaf: false,
-            ind: 1,
+            index: 1,
             children: []
           }
         ]
@@ -60,30 +64,34 @@ const nodes = reactive<Node[]>([
     id: '1',
     name: 'Customer_Melon0',
     nodeType: 'customer',
+    customerId: null,
     isLeaf: false,
-    ind: 0,
+    index: 0,
     children: [
       {
         id: '2',
         name: 'Location_Orange0',
         nodeType: 'location',
+        customerId: '1',
         isLeaf: false,
-        ind: 0,
+        index: 0,
         children: [
           {
             id: '47',
             name: 'Asset_Apple2',
             nodeType: 'asset',
+            customerId: '1',
             isLeaf: true,
-            ind: 1,
+            index: 1,
             children: []
           },
           {
             id: '5',
             name: 'AssetGroup_Apple1',
             nodeType: 'assetGroup',
+            customerId: '1',
             isLeaf: false,
-            ind: 0,
+            index: 0,
             children: []
           }
         ]
@@ -92,23 +100,26 @@ const nodes = reactive<Node[]>([
         id: '232',
         name: 'Location_Orange2',
         nodeType: 'location',
+        customerId: '1',
         isLeaf: false,
-        ind: 2,
+        index: 2,
         children: [
           {
             id: '444',
             name: 'Asset1',
             nodeType: 'asset',
+            customerId: '1',
             isLeaf: true,
-            ind: 1,
+            index: 1,
             children: []
           },
           {
             id: '51',
             name: 'AssetGroup35',
             nodeType: 'assetGroup',
+            customerId: '1',
             isLeaf: false,
-            ind: 0,
+            index: 0,
             children: []
           }
         ]
@@ -117,8 +128,9 @@ const nodes = reactive<Node[]>([
         id: '3',
         name: 'Asset_Orange1',
         nodeType: 'asset',
+        customerId: '1',
         isLeaf: true,
-        ind: 1,
+        index: 1,
         children: []
       }
     ]
@@ -127,37 +139,42 @@ const nodes = reactive<Node[]>([
     id: '6',
     name: 'Customer_Melon1',
     nodeType: 'customer',
+    customerId: null,
     isLeaf: false,
-    ind: 1,
+    index: 1,
     children: [
       {
         id: '7',
         name: 'Location_Banana0',
         nodeType: 'location',
+        customerId: '6',
         isLeaf: false,
-        ind: 0,
+        index: 0,
         children: [
           {
             id: '10',
             name: 'AssetGroup_Grapes1',
             nodeType: 'assetGroup',
+            customerId: '6',
             isLeaf: false,
-            ind: 1,
+            index: 1,
             children: []
           },
           {
             id: '11',
             name: 'AssetGroup_Grapes2',
             nodeType: 'assetGroup',
+            customerId: '6',
             isLeaf: false,
-            ind: 2,
+            index: 2,
             children: [
               {
                 id: '91530',
                 name: 'Asset_Kiwi0',
                 nodeType: 'asset',
+                customerId: '6',
                 isLeaf: true,
-                ind: 0,
+                index: 0,
                 children: []
               }
             ]
@@ -168,39 +185,52 @@ const nodes = reactive<Node[]>([
   }
 ])
 
+// change order of nodes to be displayed
+const changeOrder = (nodes: Node[]) => {
+  nodes.sort((a, b) => a.index - b.index)
+  nodes.forEach((node) => {
+    if (node.children && node.children.length > 0) {
+      changeOrder(node.children)
+    }
+  })
+  return nodes
+}
+
+const nodes = reactive(changeOrder(defaultNodes))
+
 const hoveredNode = ref<Node | null>(null)
 const draggingNode = ref<Node | null>(null)
 
 // Update draggingNode value
-const handleDraggingNodeUpdate = (id: string | null) => {
-  if (!id) {
+const handleDraggingNodeUpdate = (node: Node | null) => {
+  if (!node) {
     draggingNode.value = null
     return
   }
-  draggingNode.value = findNodeFromId(nodes, id)
+  draggingNode.value = node
 }
 
-const handleHoveredNodeUpdate = (id: string | null) => {
-  if (!id) {
+const handleHoveredNodeUpdate = (node: Node | null) => {
+  if (!node) {
     hoveredNode.value = null
     return
   }
 
-  hoveredNode.value = findNodeFromId(nodes, id) || null
+  hoveredNode.value = node
 }
 
 //Find node's ancestor ID
 const findAncestorInfo = (
   nodes: Node[],
-  nodeId: string,
+  targetNode: Node,
   parent: { id: string; nodeType: NodeType } | null = null
 ): { id: string; nodeType: NodeType } | null => {
   for (const node of nodes) {
-    if (node.id === nodeId) {
+    if (node.id === targetNode.id) {
       return parent
     }
     if (node.children && node.children.length > 0) {
-      const result = findAncestorInfo(node.children, nodeId, {
+      const result = findAncestorInfo(node.children, targetNode, {
         id: node.id,
         nodeType: node.nodeType
       })
@@ -211,13 +241,13 @@ const findAncestorInfo = (
 }
 
 // Search ancestor node and return children array
-const findAncestorNodesChildrenArray = (nodes: Node[], nodeId: string): Node[] | null => {
+const findAncestorNodesChildrenArray = (nodes: Node[], targetNode: Node): Node[] | null => {
   for (const node of nodes) {
-    if (node.id === nodeId) {
+    if (node.id === targetNode.id) {
       return nodes
     }
     if (node.children && node.children.length > 0) {
-      const result = findAncestorNodesChildrenArray(node.children, nodeId)
+      const result = findAncestorNodesChildrenArray(node.children, targetNode)
       if (result) return result
     }
   }
@@ -225,40 +255,24 @@ const findAncestorNodesChildrenArray = (nodes: Node[], nodeId: string): Node[] |
 }
 
 // Search target node index
-const findTargetNodeIndex = (nodes: Node[], targetNodeId: string): number => {
+const findTargetNodeIndex = (nodes: Node[], targetNode: Node): number => {
   for (let i = 0; i < nodes.length; i++) {
-    if (nodes[i].id === targetNodeId) {
+    if (nodes[i].id === targetNode.id) {
       return i
     }
   }
   return -1
 }
 
-// Function to recursively find a node by ID
-const findNodeFromId = (nodes: Node[], nodeId: string): Node | null => {
-  for (const node of nodes) {
-    if (node.id === nodeId) {
-      return node
-    }
-    if (node.children) {
-      const foundNode = findNodeFromId(node.children, nodeId)
-      if (foundNode) {
-        return foundNode
-      }
-    }
-  }
-  return null
-}
-
 // Find and remove node from the tree
-function findAndRemoveNode(nodes: Node[], nodeId: string): Node | null {
+function removeNode(nodes: Node[], targetNode: Node): Node | null {
   for (let i = 0; i < nodes.length; i++) {
-    if (nodes[i].id === nodeId) {
-      return nodes.splice(i, 1)[0]
+    if (nodes[i].id === targetNode.id) {
+      return nodes.splice(i, 1)[0] // Remove the node and return it
     }
     if (nodes[i].children && nodes[i].children.length > 0) {
-      const node = findAndRemoveNode(nodes[i].children, nodeId)
-      if (node) return node
+      const removedNode = removeNode(nodes[i].children, targetNode)
+      if (removedNode) return removedNode
     }
   }
   return null
@@ -266,27 +280,40 @@ function findAndRemoveNode(nodes: Node[], nodeId: string): Node | null {
 
 // Insert dragged node relative to the target node
 const insertNodeRelativeTo = async (
-  draggedNodeId: string,
-  targetNodeId: string,
+  draggedNode: Node,
+  targetNode: Node,
   position: 'before' | 'after'
 ) => {
+  if (
+    draggedNode.customerId !== targetNode.customerId ||
+    draggedNode.id === targetNode.id ||
+    (draggedNode.nodeType === 'customer' && targetNode.nodeType === 'location') ||
+    (draggedNode.nodeType === 'customer' && targetNode.nodeType === 'assetGroup') ||
+    (draggedNode.nodeType === 'customer' && targetNode.nodeType === 'asset') ||
+    (draggedNode.nodeType === 'asset' && targetNode.nodeType === 'customer') ||
+    (draggedNode.nodeType === 'assetGroup' && targetNode.nodeType === 'customer') ||
+    (draggedNode.nodeType === 'location' && targetNode.nodeType === 'customer')
+  ) {
+    console.error('Invalid operation')
+    return
+  }
+
   try {
-    const draggedNode = findAndRemoveNode(nodes, draggedNodeId)
+    removeNode(nodes, draggedNode)
     if (!draggedNode) {
       console.error('Dragged node not found')
       return
     }
-    const parentNodesChildrenArray = findAncestorNodesChildrenArray(nodes, targetNodeId)
+    const parentNodesChildrenArray = findAncestorNodesChildrenArray(nodes, targetNode)
     if (!parentNodesChildrenArray) {
       console.error('No parent node found for the target ID')
       return
     }
-    const targetNodeIndex = findTargetNodeIndex(parentNodesChildrenArray, targetNodeId)
+    const targetNodeIndex = findTargetNodeIndex(parentNodesChildrenArray, targetNode)
     const insertIndex = position === 'before' ? targetNodeIndex : targetNodeIndex + 1
     parentNodesChildrenArray.splice(insertIndex, 0, draggedNode)
-    const targetNode = findNodeFromId(nodes, targetNodeId)
     const ancestorInfo =
-      targetNode?.nodeType === 'customer' ? null : findAncestorInfo(nodes, targetNodeId)
+      targetNode?.nodeType === 'customer' ? null : findAncestorInfo(nodes, targetNode)
     await sendNodeData({
       id: draggedNode.id,
       nodeType: draggedNode.nodeType,
@@ -300,24 +327,35 @@ const insertNodeRelativeTo = async (
 }
 
 // Insert dragged node before the target node
-const insertBefore = (draggedNodeId: string, targetNodeId: string) => {
-  insertNodeRelativeTo(draggedNodeId, targetNodeId, 'before')
+const insertBefore = (draggedNode: Node, targetNode: Node) => {
+  insertNodeRelativeTo(draggedNode, targetNode, 'before')
 }
 
 // Insert dragged node after the target node
-const insertAfter = (draggedNodeId: string, targetNodeId: string) => {
-  insertNodeRelativeTo(draggedNodeId, targetNodeId, 'after')
+const insertAfter = (draggedNode: Node, targetNode: Node) => {
+  insertNodeRelativeTo(draggedNode, targetNode, 'after')
 }
 
 // Append the dragged node as a child of the target node
-const appendChild = async (draggedNodeId: string, targetNodeId: string) => {
+const appendChild = async (draggedNode: Node, targetNode: Node) => {
+  if (
+    draggedNode.customerId !== targetNode.customerId ||
+    draggedNode.id === targetNode.id ||
+    (draggedNode.nodeType === 'customer' && targetNode.nodeType === 'customer') ||
+    (draggedNode.nodeType === 'customer' && targetNode.nodeType === 'location') ||
+    (draggedNode.nodeType === 'customer' && targetNode.nodeType === 'assetGroup') ||
+    (draggedNode.nodeType === 'customer' && targetNode.nodeType === 'asset') ||
+    (draggedNode.nodeType === 'location' && targetNode.nodeType === 'assetGroup')
+  ) {
+    console.error('Invalid operation')
+    return
+  }
   try {
-    const draggedNode = findAndRemoveNode(nodes, draggedNodeId)
+    removeNode(nodes, draggedNode)
     if (!draggedNode) {
       console.error('Dragged node not found')
       return
     }
-    const targetNode = findNodeFromId(nodes, targetNodeId)
     if (!targetNode) {
       console.error('Target node not found')
       return
@@ -328,7 +366,7 @@ const appendChild = async (draggedNodeId: string, targetNodeId: string) => {
     await sendNodeData({
       id: draggedNode.id,
       nodeType: draggedNode.nodeType,
-      ancestorId: targetNodeId,
+      ancestorId: targetNode.id,
       ancestorNodeType: targetNode.nodeType,
       index: targetNode.children.length - 1
     })
