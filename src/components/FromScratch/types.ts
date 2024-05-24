@@ -11,3 +11,5 @@ export type Node = {
 }
 
 export type NodeType = 'customer' | 'location' | 'assetGroup' | 'asset'
+
+export type hoverOptions = 'before' | 'after' | 'appendChild'

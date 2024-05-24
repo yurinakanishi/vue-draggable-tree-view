@@ -18,8 +18,6 @@
         }"
         @dragover.prevent
         @drop.stop="onDropBefore($event, node)"
-        @dragenter.stop
-        @dragleave.stop
         @dragenter="onDragEnterDropBeforeArea"
         @dragleave="onDragLeaveDropBeforeArea"
       ></div>
@@ -67,8 +65,8 @@
       }"
       @dragover.prevent
       @drop.stop="onDropAfter($event, node)"
-      @dragenter.stop="onDragEnterDropAfterArea"
-      @dragleave.stop="onDragLeaveDropAfterArea"
+      @dragenter="onDragEnterDropAfterArea"
+      @dragleave="onDragLeaveDropAfterArea"
       v-if="nodes.length - 1 === i"
     ></div>
   </div>
@@ -76,7 +74,7 @@
 
 <script setup lang="ts">
 import { defineProps, defineEmits, reactive, ref } from 'vue'
-import type { PropType, Ref } from 'vue'
+import type { PropType } from 'vue'
 import type { Node } from './types'
 import TreeNodes from './TreeNodes.vue'
 
@@ -195,6 +193,7 @@ const onDropAppendChild = (event: DragEvent, targetNode: Node) => {
 }
 
 const onDragEnter = (node: Node) => {
+  console.log('onDragEnter', node.id)
   emits('update:hoveredNode', node)
 }
 
