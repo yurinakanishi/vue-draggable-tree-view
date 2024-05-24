@@ -18,11 +18,11 @@
         }"
         @dragover.prevent
         @drop.stop="onDropBefore($event, node.id)"
+        @dragenter.stop
+        @dragleave.stop
         @dragenter="onDragEnterDropBeforeArea"
         @dragleave="onDragLeaveDropBeforeArea"
-      >
-        <div class="bar"></div>
-      </div>
+      ></div>
       <div
         class="node-name"
         :class="{ hovered: node.id === hoveredNode?.id && isHoveredToNodeName }"
@@ -70,9 +70,7 @@
       @dragenter.stop="onDragEnterDropAfterArea"
       @dragleave.stop="onDragLeaveDropAfterArea"
       v-if="nodes.length - 1 === i"
-    >
-      <div class="bar"></div>
-    </div>
+    ></div>
   </div>
 </template>
 
@@ -116,18 +114,6 @@ const toggleExpand = (node: Node) => {
   }
 }
 
-const DropBeforeAreaDDCounter = ref(0)
-
-const onDragEnterDropBeforeAreaBar = () => {
-  DropBeforeAreaDDCounter.value++
-  console.log('onDragEnterDropBeforeAreaBar:', DropBeforeAreaDDCounter.value)
-}
-
-const onDragLeaveDropBeforeAreaBar = () => {
-  DropBeforeAreaDDCounter.value--
-  console.log('onDragLeaveDropBeforeAreaBar:', DropBeforeAreaDDCounter.value)
-}
-
 //insertBeforeを親にemitする
 const insertBefore = (draggedNodeId: string, targetNodeId: string) => {
   emits('move:node:before', draggedNodeId, targetNodeId)
@@ -160,15 +146,12 @@ const onDragStart = (event: DragEvent, nodeId: string) => {
 }
 
 const onDragEnd = () => {
-  console.log('onDragEnd')
   emits('update:draggingNode', null)
 }
 
 // ドラッグされたノードをドロップ先の前に移動する
 const onDropBefore = (event: DragEvent, targetNodeId: string) => {
   const draggedNodeId = event.dataTransfer?.getData('text') || ''
-  console.log('Dropped Node ID:', draggedNodeId, 'Target Node ID:', targetNodeId)
-  // ドラッグ元とドロップ先が同じ場合はReturn
   if (draggedNodeId === targetNodeId) {
     return
   }
@@ -180,8 +163,6 @@ const onDropBefore = (event: DragEvent, targetNodeId: string) => {
 // ドラッグされたノードをドロップ先の後に移動する
 const onDropAfter = (event: DragEvent, targetNodeId: string) => {
   const draggedNodeId = event.dataTransfer?.getData('text') || ''
-  console.log('Dropped Node ID:', draggedNodeId, 'Target Node ID:', targetNodeId)
-  // ドラッグ元とドロップ先が同じ場合はReturn
   if (draggedNodeId === targetNodeId) {
     return
   }
@@ -192,8 +173,6 @@ const onDropAfter = (event: DragEvent, targetNodeId: string) => {
 
 const onDropAppendChild = (event: DragEvent, nodeId: string) => {
   const draggedNodeId = event.dataTransfer?.getData('text') || ''
-  console.log('Dropped Node ID:', draggedNodeId, 'Target Node ID:', nodeId)
-  // ドラッグ元とドロップ先が同じ場合はReturn
   if (draggedNodeId === nodeId) {
     return
   }
@@ -203,20 +182,16 @@ const onDropAppendChild = (event: DragEvent, nodeId: string) => {
 }
 
 const onDragEnter = (nodeId: string) => {
-  console.log('onDragEnter:', nodeId)
   emits('update:hoveredNode', nodeId)
 }
 
-const onDragLeave = (nodeId: string) => {
-  console.log('onDragLeave from:', nodeId)
-}
+const onDragLeave = (nodeId: string) => {}
 
 const onDragEnterNodeName = (nodeId: string) => {
   isHoveredToNodeName.value = true
 }
 
 const onDragLeaveNodeName = () => {
-  console.log('onDragLeaveNodeName')
   isHoveredToNodeName.value = false
 }
 
@@ -252,16 +227,14 @@ const onDragLeaveDropAfterArea = () => {
 
 .drop-area {
   height: 10px;
-  background-color: #ccc;
+  background-color: #ccc; /* 基本の背景色 */
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.drop-area.hovered .bar {
-  width: 100%;
-  height: 3px;
-  background-color: #ff0606;
+.drop-area.hovered {
+  background: linear-gradient(to bottom, #ccc 40%, #2558ff 40%, #2558ff 60%, #ccc 60%);
 }
 
 .node-name {
