@@ -12,4 +12,4 @@ export type Node = {
 
 export type NodeType = 'customer' | 'location' | 'assetGroup' | 'asset'
 
-export type hoverOptions = 'before' | 'after' | 'appendChild'
+export type DropOption = 'before' | 'after' | 'appendChild'

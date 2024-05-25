@@ -3,13 +3,16 @@
     <div style="min-width: 500px">
       <TreeNodes
         :nodes="nodes"
-        :hoveredNode="hoveredNode"
+        :dragHoverTargetNode="dragHoverTargetNode"
         :draggingNode="draggingNode"
+        :canDropNow="canDropNow"
         @move:node:before="insertBefore"
         @move:node:after="insertAfter"
         @move:node:appendChild="appendChild"
-        @update:hoveredNode="handleHoveredNodeUpdate"
+        @update:dragHoverTargetNode="handleHoveredNodeUpdate"
         @update:draggingNode="handleDraggingNodeUpdate"
+        @status:canDrop="handleCanDrop"
+        @status:dropOption="handleDropOption"
       />
     </div>
     <pre>{{ JSON.stringify(nodes, null, 2) }}</pre>
@@ -19,7 +22,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import TreeNodes from './TreeNodes.vue'
-import type { Node, NodeType } from './types'
+import type { DropOption, Node, NodeType } from './types'
 
 const defaultNodes = reactive<Node[]>([
   {
@@ -185,6 +188,9 @@ const defaultNodes = reactive<Node[]>([
   }
 ])
 
+const canDropNow = ref(true)
+const dropOption = ref<DropOption | null>(null)
+
 // change order of nodes to be displayed
 const changeOrder = (nodes: Node[]) => {
   nodes.sort((a, b) => a.index - b.index)
@@ -198,7 +204,7 @@ const changeOrder = (nodes: Node[]) => {
 
 const nodes = reactive(changeOrder(defaultNodes))
 
-const hoveredNode = ref<Node | null>(null)
+const dragHoverTargetNode = ref<Node | null>(null)
 const draggingNode = ref<Node | null>(null)
 
 // Update draggingNode value
@@ -212,11 +218,11 @@ const handleDraggingNodeUpdate = (node: Node | null) => {
 
 const handleHoveredNodeUpdate = (node: Node | null) => {
   if (!node) {
-    hoveredNode.value = null
+    dragHoverTargetNode.value = null
     return
   }
 
-  hoveredNode.value = node
+  dragHoverTargetNode.value = node
 }
 
 //Find node's ancestor ID
@@ -278,14 +284,24 @@ function removeNode(nodes: Node[], targetNode: Node): Node | null {
   return null
 }
 
-// Insert dragged node relative to the target node
-const insertNodeRelativeTo = async (
-  draggedNode: Node,
-  targetNode: Node,
-  position: 'before' | 'after'
-) => {
-  if (
-    draggedNode.customerId !== targetNode.customerId ||
+const findAllDescendantNodes = (targetNode: Node): Node[] => {
+  const descendants: Node[] = []
+  const findDescendants = (node: Node) => {
+    if (node.children && node.children.length > 0) {
+      node.children.forEach((child) => {
+        descendants.push(child)
+        findDescendants(child)
+      })
+    }
+  }
+  findDescendants(targetNode)
+  return descendants
+}
+
+const isInvalidOperationForInsertNode = (draggedNode: Node, targetNode: Node): boolean => {
+  return (
+    (draggedNode.customerId !== targetNode.customerId &&
+      (draggedNode.nodeType !== 'customer' || targetNode.nodeType !== 'customer')) ||
     draggedNode.id === targetNode.id ||
     (draggedNode.nodeType === 'customer' && targetNode.nodeType === 'location') ||
     (draggedNode.nodeType === 'customer' && targetNode.nodeType === 'assetGroup') ||
@@ -293,8 +309,36 @@ const insertNodeRelativeTo = async (
     (draggedNode.nodeType === 'asset' && targetNode.nodeType === 'customer') ||
     (draggedNode.nodeType === 'assetGroup' && targetNode.nodeType === 'customer') ||
     (draggedNode.nodeType === 'location' && targetNode.nodeType === 'customer')
-  ) {
+  )
+}
+
+const isInvalidOperationForAppendChild = (draggedNode: Node, targetNode: Node): boolean => {
+  return (
+    draggedNode.customerId !== targetNode.customerId ||
+    draggedNode.id === targetNode.id ||
+    (draggedNode.nodeType === 'customer' && targetNode.nodeType === 'customer') ||
+    (draggedNode.nodeType === 'customer' && targetNode.nodeType === 'location') ||
+    (draggedNode.nodeType === 'customer' && targetNode.nodeType === 'assetGroup') ||
+    (draggedNode.nodeType === 'customer' && targetNode.nodeType === 'asset') ||
+    (draggedNode.nodeType === 'location' && targetNode.nodeType === 'assetGroup') ||
+    (draggedNode.nodeType === 'location' && targetNode.nodeType === 'asset') ||
+    (draggedNode.nodeType === 'assetGroup' && targetNode.nodeType === 'asset')
+  )
+}
+
+// Insert dragged node relative to the target node
+const insertNodeRelativeTo = async (
+  draggedNode: Node,
+  targetNode: Node,
+  position: 'before' | 'after'
+) => {
+  if (isInvalidOperationForInsertNode(draggedNode, targetNode)) {
     console.error('Invalid operation')
+    return
+  }
+  const descendantList = findAllDescendantNodes(draggedNode)
+  if (descendantList.some((node) => node.id === targetNode.id)) {
+    console.error('Cannot move a node to its descendant')
     return
   }
 
@@ -338,18 +382,17 @@ const insertAfter = (draggedNode: Node, targetNode: Node) => {
 
 // Append the dragged node as a child of the target node
 const appendChild = async (draggedNode: Node, targetNode: Node) => {
-  if (
-    draggedNode.customerId !== targetNode.customerId ||
-    draggedNode.id === targetNode.id ||
-    (draggedNode.nodeType === 'customer' && targetNode.nodeType === 'customer') ||
-    (draggedNode.nodeType === 'customer' && targetNode.nodeType === 'location') ||
-    (draggedNode.nodeType === 'customer' && targetNode.nodeType === 'assetGroup') ||
-    (draggedNode.nodeType === 'customer' && targetNode.nodeType === 'asset') ||
-    (draggedNode.nodeType === 'location' && targetNode.nodeType === 'assetGroup')
-  ) {
+  if (isInvalidOperationForAppendChild(draggedNode, targetNode)) {
     console.error('Invalid operation')
     return
   }
+
+  const descendantList = findAllDescendantNodes(draggedNode)
+  if (descendantList.some((node) => node.id === targetNode.id)) {
+    console.error('Cannot move a node to its descendant')
+    return
+  }
+
   try {
     removeNode(nodes, draggedNode)
     if (!draggedNode) {
@@ -372,6 +415,34 @@ const appendChild = async (draggedNode: Node, targetNode: Node) => {
     })
   } catch (error) {
     console.error('An error occurred:', error)
+  }
+}
+
+const handleCanDrop = (draggedNode: Node, targetNode: Node) => {
+  if (
+    (dropOption.value === 'before' || dropOption.value === 'after') &&
+    isInvalidOperationForInsertNode(draggedNode, targetNode)
+  ) {
+    canDropNow.value = false
+    return
+  }
+  if (
+    dropOption.value === 'appendChild' &&
+    isInvalidOperationForAppendChild(draggedNode, targetNode)
+  ) {
+    canDropNow.value = false
+    return
+  }
+  console.log('Can drop now:', targetNode.id)
+  canDropNow.value = true
+}
+
+const handleDropOption = (option: DropOption | null) => {
+  if (option) {
+    dropOption.value = option
+    console.log('Received drop option:', option)
+  } else {
+    dropOption.value = null
   }
 }
 
